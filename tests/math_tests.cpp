@@ -59,8 +59,8 @@ TEST(MathTests, Vec3)
     {
         raytracer::Vec3<double> v1(1.0, 2.0, 3.0);
         raytracer::Vec3<double> v2(4.0, 5.0, 6.0);
-        ASSERT_FLOAT_EQ(raytracer::dot(v1, v2), 32.0);
-        auto v_cross = raytracer::cross(v1, v2);
+        ASSERT_FLOAT_EQ(raytracer::Dot(v1, v2), 32.0);
+        auto v_cross = raytracer::Cross(v1, v2);
         ASSERT_FLOAT_EQ(v_cross.x(), -3.0);
         ASSERT_FLOAT_EQ(v_cross.y(), 6.0);
         ASSERT_FLOAT_EQ(v_cross.z(), -3.0);

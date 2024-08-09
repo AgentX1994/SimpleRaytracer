@@ -3,6 +3,11 @@
 #include <numbers>
 #include <iostream>
 
+#include "color.hpp"
+#include "material.hpp"
+#include "light.hpp"
+#include "scene_object.hpp"
+
 namespace raytracer
 {
     Raytracer::Raytracer(int width, int height) : width(width), height(height) {}
@@ -10,11 +15,22 @@ namespace raytracer
 
     std::vector<uint8_t> Raytracer::TraceScene()
     {
-        std::vector<uint8_t> pixel_data(3 * width * height, 0);
+        std::vector<uint8_t> pixel_data(4 * width * height, 0);
         Point3<double> cam_pos(0, 0, 0);
 
         // The scene is just a sphere at 0, 0, -5
         Sphere sphere(Point3<double>(0.0, 0.0, -5.0), 2.0);
+        BlinnPhongMaterial<double> material(Color<double>{0.25, 0.25, 1.0});
+        //NormalMaterial<double> material;
+        //PositionMaterial<double> material;
+        SceneObject<double> sphere_object(&sphere, &material);
+        std::vector<Light<double>> lights = {
+            Light<double>(
+                Point3<double>(3.0, 3.0, 3.0),
+                40.0,
+                Color<double>{1.0, 1.0, 1.0},
+                40.0,
+                Color<double>{1.0, 1.0, 1.0})};
 
         int counter = 0;
         for (int dx = 0; dx < width; ++dx)
@@ -28,31 +44,35 @@ namespace raytracer
                 double pixel_screen_x = 2.0 * pixel_x_ndc - 1.0;
                 double pixel_screen_y = 2.0 * pixel_y_ndc - 1.0;
 
-                // println!("Now rendering screen coords ({}, {})", pixel_screen_x, pixel_screen_y);
+                double aspect_ratio = (double)width / (double)height;
                 double fovx = 90.0;
                 double fovy = 90.0;
 
                 constexpr double DEGREES_TO_RADIANS = std::numbers::pi / 180.0;
-                double aspect_ratio = (double)width / (double)height;
                 double pixel_camera_x = pixel_screen_x * aspect_ratio * std::tan(fovx / 2.0 * DEGREES_TO_RADIANS);
                 double pixel_camera_y = pixel_screen_y * std::tan(fovy / 2.0 * DEGREES_TO_RADIANS);
                 Vec3 pixel_camera_space(pixel_camera_x, pixel_camera_y, -1.0);
                 auto dir = pixel_camera_space.ToUnit();
 
-                // std::cout << "Dir is " << dir.x() << ", " << dir.y() << ", " << dir.z() << '\n';
-
                 auto r = Ray(cam_pos, dir);
 
                 IntersectionRecord<double> record;
 
-                auto pixel_start_index = 3 * width * dy + 3 * dx;
+                auto pixel_start_index = 4 * width * (height - dy) + 4 * dx;
 
-                if (sphere.intersect(&r, std::numeric_limits<double>::infinity(), record))
+                if (sphere_object.Intersect(&r, std::numeric_limits<double>::infinity(), record))
                 {
-                    // std::cout << "HIT!\n";
-                    pixel_data[pixel_start_index] = 255;
-                    pixel_data[pixel_start_index + 1] = 255;
-                    pixel_data[pixel_start_index + 2] = 255;
+                    auto c = sphere_object.Shade(record, lights);
+                    if (c.r < 0.1 && c.g < 0.1 && c.b < 0.1)
+                    {
+                        std::cout << "Hit without color at pixel " << dx << ", " << dy << '\n';
+                    }
+                    //std::cout << "HIT! Record = " << record << " Color = " << c << '\n';
+                    // Format is RGBA8888 which is RRGGBBAA
+                    pixel_data[pixel_start_index] = c.r * 255;
+                    pixel_data[pixel_start_index + 1] = c.g * 255;
+                    pixel_data[pixel_start_index + 2] = c.b * 255;
+                    pixel_data[pixel_start_index + 3] = 255;
                     counter++;
                 }
                 else

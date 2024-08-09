@@ -36,8 +36,8 @@ namespace raytracer
 
     SDL_Texture *SdlWindow::MakeTexture(int width, int height, const uint8_t *data)
     {
-        auto tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_STATIC, width, height);
-        SDL_UpdateTexture(tex, NULL, data, 3 * width);
+        auto tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, width, height);
+        SDL_UpdateTexture(tex, NULL, data, 4 * width);
         return tex;
     }
 
