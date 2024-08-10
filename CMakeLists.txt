@@ -5,6 +5,7 @@ project(raytracer
     VERSION 0.01)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_COLOR_DIAGNOSTICS ON)
 
 # 1. Look for a SDL2 package, 2. look for the SDL2 component and 3. fail if none can be found
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)

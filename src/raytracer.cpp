@@ -7,6 +7,7 @@
 #include "material.hpp"
 #include "light.hpp"
 #include "scene_object.hpp"
+#include "scene_tree.hpp"
 
 namespace raytracer
 {
@@ -19,11 +20,16 @@ namespace raytracer
         Point3<double> cam_pos(0, 0, 0);
 
         // The scene is just a sphere at 0, 0, -5
-        Sphere sphere(Point3<double>(0.0, 0.0, -5.0), 2.0);
+        Sphere sphere;
         BlinnPhongMaterial<double> material(Color<double>{0.25, 0.25, 1.0});
         //NormalMaterial<double> material;
         //PositionMaterial<double> material;
         SceneObject<double> sphere_object(&sphere, &material);
+        SceneNode<double> node;
+        node.object = &sphere_object;
+        node.translation = Point3<double>(0.0, 0.0, -5.0);
+        node.scale = Vec3<double>(2.0, 2.0, 2.0);
+        node.transform_dirty = true;
         std::vector<Light<double>> lights = {
             Light<double>(
                 Point3<double>(3.0, 3.0, 3.0),
@@ -60,7 +66,7 @@ namespace raytracer
 
                 auto pixel_start_index = 4 * width * (height - dy) + 4 * dx;
 
-                if (sphere_object.Intersect(&r, std::numeric_limits<double>::infinity(), record))
+                if (node.Intersect(&r, std::numeric_limits<double>::infinity(), record))
                 {
                     auto c = sphere_object.Shade(record, lights);
                     if (c.r < 0.1 && c.g < 0.1 && c.b < 0.1)
