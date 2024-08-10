@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <vector>
 
 #include <SDL.h>
 
@@ -20,7 +21,8 @@ namespace raytracer
 
         SDL_Event PollEvent();
 
-        SDL_Texture *MakeTexture(int width, int height, const uint8_t *data);
+        SDL_Texture *MakeTexture(int width, int height);
+        void UpdateTexture(SDL_Texture *texture, int width, int height, const std::vector<uint8_t> &pixels);
         void DestroyTexture(SDL_Texture *texture);
         void Clear();
         void DrawTexture(SDL_Texture *texture);

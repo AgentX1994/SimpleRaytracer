@@ -582,7 +582,11 @@ namespace raytracer
     template <std::floating_point T>
     std::ostream& operator<<(std::ostream &str, const IntersectionRecord<T> &record)
     {
-        str << "IntersectionRecord t=" << record.t << " shape=" << record.shape << " ray=" << *record.ray << " position=" << record.position << " normal=" << record.normal;
+        str << "IntersectionRecord t=" << record.t
+            << " shape=" << record.shape
+            << " ray=" << ((record.ray != nullptr) ? *record.ray : Ray<T>(Point3<T>(), Vec3<T>()))
+            << " position=" << record.position
+            << " normal=" << record.normal;
         return str;
     }
 

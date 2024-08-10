@@ -1,4 +1,5 @@
 #include <iostream>
+#include <vector>
 
 #include "sdl_window.hpp"
 #include "raytracer.hpp"
@@ -17,10 +18,10 @@ int main(int argc, char **argv)
     }
     Raytracer rt(WIDTH, HEIGHT);
     // Raytrace
-    auto tex_data = rt.TraceScene();
+    rt.StartTrace();
 
     SdlWindow window(WIDTH, HEIGHT);
-    auto tex = window.MakeTexture(WIDTH, HEIGHT, tex_data.data());
+    auto tex = window.MakeTexture(WIDTH, HEIGHT);
 
     while (true)
     {
@@ -36,10 +37,15 @@ int main(int argc, char **argv)
                 break;
             }
         }
+
+        window.UpdateTexture(tex, WIDTH, HEIGHT, rt.GetPixels());
+
         window.Clear();
         window.DrawTexture(tex);
         window.Present();
     }
+
+    rt.StopTrace();
 
     window.DestroyTexture(tex);
 }

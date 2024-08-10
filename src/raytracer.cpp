@@ -2,6 +2,7 @@
 
 #include <numbers>
 #include <iostream>
+#include <thread>
 
 #include "color.hpp"
 #include "material.hpp"
@@ -11,12 +12,34 @@
 
 namespace raytracer
 {
-    Raytracer::Raytracer(int width, int height) : width(width), height(height) {}
+    Raytracer::Raytracer(int width, int height)
+        : width(width),
+          height(height),
+          pixel_data(4*width*height, 0)
+    {}
+
     Raytracer::~Raytracer() {}
 
-    std::vector<uint8_t> Raytracer::TraceScene()
+    void Raytracer::StartTrace()
     {
-        std::vector<uint8_t> pixel_data(4 * width * height, 0);
+        tracing_thread = std::thread(&Raytracer::ThreadTraceScene, this);
+    }
+
+    void Raytracer::StopTrace()
+    {
+        if (tracing_thread.joinable())
+        {
+            tracing_thread.join();
+        }
+    }
+
+    const std::vector<uint8_t> &Raytracer::GetPixels()
+    {
+        return pixel_data;
+    }
+
+    void Raytracer::ThreadTraceScene()
+    {
         Point3<double> cam_pos(0, 0, 0);
 
         // The scene is just a sphere at 0, 0, -5
@@ -79,7 +102,6 @@ namespace raytracer
 
                 IntersectionRecord<double> record;
 
-                auto pixel_start_index = 4 * width * (height - dy) + 4 * dx;
                 // TODO find a better way to save the hit node
                 const SceneNode<double>* hit_node = nullptr;
 
@@ -91,14 +113,10 @@ namespace raytracer
                     }
                 }
 
+                auto pixel_start_index = 4 * width * (height - dy) + 4 * dx;
                 if (hit_node != nullptr)
                 {
                     auto c = hit_node->Shade(record, lights);
-                    if (c.r < 0.1 && c.g < 0.1 && c.b < 0.1)
-                    {
-                        std::cout << "Hit without color at pixel " << dx << ", " << dy << '\n';
-                    }
-                    //std::cout << "HIT! Record = " << record << " Color = " << c << '\n';
                     // Format is RGBA8888 which is RRGGBBAA
                     pixel_data[pixel_start_index] = c.r * 255;
                     pixel_data[pixel_start_index + 1] = c.g * 255;
@@ -111,12 +129,11 @@ namespace raytracer
                     pixel_data[pixel_start_index] = 0;
                     pixel_data[pixel_start_index + 1] = 0;
                     pixel_data[pixel_start_index + 2] = 0;
+                    pixel_data[pixel_start_index + 3] = 255;
                 }
             }
         }
 
         std::cout << "Image done, " << counter << " hits\n";
-
-        return pixel_data;
     }
 }

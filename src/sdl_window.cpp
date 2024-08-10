@@ -1,5 +1,8 @@
 #include "sdl_window.hpp"
 
+#include <SDL_surface.h>
+#include <iostream>
+
 namespace raytracer
 {
 
@@ -34,11 +37,15 @@ namespace raytracer
         return event;
     }
 
-    SDL_Texture *SdlWindow::MakeTexture(int width, int height, const uint8_t *data)
+    SDL_Texture *SdlWindow::MakeTexture(int width, int height)
     {
         auto tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, width, height);
-        SDL_UpdateTexture(tex, NULL, data, 4 * width);
         return tex;
+    }
+
+    void SdlWindow::UpdateTexture(SDL_Texture *texture, int width, int height, const std::vector<uint8_t> &pixels)
+    {
+        SDL_UpdateTexture(texture, NULL, pixels.data(), 4*width);
     }
 
     void SdlWindow::DestroyTexture(SDL_Texture *texture)
