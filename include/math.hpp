@@ -60,6 +60,8 @@ namespace raytracer
     {
     public:
         Vec3() : vec({0.0}) {}
+        Vec3(T x) : Vec3(x, x, x) {}
+
         Vec3(T x, T y, T z) : Vec3()
         {
             vec[0] = x;
@@ -629,6 +631,11 @@ namespace raytracer
                 {
                     return false;
                 }
+            }
+
+            if (t0 >= max_distance)
+            {
+                return false;
             }
 
             // Calculate hit location and normal at that location

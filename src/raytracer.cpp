@@ -21,15 +21,30 @@ namespace raytracer
 
         // The scene is just a sphere at 0, 0, -5
         Sphere sphere;
-        BlinnPhongMaterial<double> material(Color<double>{0.25, 0.25, 1.0});
+        BlinnPhongMaterial<double> material1(Color<double>{0.25, 0.25, 1.0});
+        BlinnPhongMaterial<double> material2(Color<double>{1.0, 0.25, 0.25});
+        BlinnPhongMaterial<double> material3(Color<double>{1.0, 1.0, 1.0});
         //NormalMaterial<double> material;
         //PositionMaterial<double> material;
-        SceneObject<double> sphere_object(&sphere, &material);
-        SceneNode<double> node;
-        node.object = &sphere_object;
-        node.translation = Point3<double>(0.0, 0.0, -5.0);
-        node.scale = Vec3<double>(2.0, 2.0, 2.0);
-        node.transform_dirty = true;
+        SceneObject<double> sphere1(&sphere, &material1);
+        SceneObject<double> sphere2(&sphere, &material2);
+        SceneObject<double> sphere3(&sphere, &material3);
+        SceneTree<double> scene_tree;
+        {
+            SceneNode<double> &node = scene_tree.AddNode(&sphere1);
+            node.SetTranslation(0.0, 0.0, -5.0);
+            node.SetScale(2.0);
+        }
+        {
+            SceneNode<double> &node = scene_tree.AddNode(&sphere2);
+            node.SetTranslation(4.0, 3.0, -5.0);
+            node.SetScale(1.0);
+        }
+        {
+            SceneNode<double> &node = scene_tree.AddNode(&sphere3);
+            node.SetTranslation(7.0, 5.0, -10.0);
+            node.SetScale(4.0);
+        }
         std::vector<Light<double>> lights = {
             Light<double>(
                 Point3<double>(3.0, 3.0, 3.0),
@@ -65,10 +80,20 @@ namespace raytracer
                 IntersectionRecord<double> record;
 
                 auto pixel_start_index = 4 * width * (height - dy) + 4 * dx;
+                // TODO find a better way to save the hit node
+                const SceneNode<double>* hit_node = nullptr;
 
-                if (node.Intersect(&r, std::numeric_limits<double>::infinity(), record))
+                for (auto &n : scene_tree)
                 {
-                    auto c = sphere_object.Shade(record, lights);
+                    if (n.Intersect(&r, record.t, record))
+                    {
+                        hit_node = &n;
+                    }
+                }
+
+                if (hit_node != nullptr)
+                {
+                    auto c = hit_node->Shade(record, lights);
                     if (c.r < 0.1 && c.g < 0.1 && c.b < 0.1)
                     {
                         std::cout << "Hit without color at pixel " << dx << ", " << dy << '\n';
