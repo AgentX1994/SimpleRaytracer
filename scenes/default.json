@@ -1,0 +1,62 @@
+{
+    "camera": {
+        "position": [0.0, 0.0, 0.0],
+        "direction": [0.3, 0.0, -1.0]
+    },
+    "materials": [
+        {
+            "type": "blinnphong",
+            "name": "mat1",
+            "base": [0.25, 0.25, 1.0]
+        },
+        {
+            "type": "blinnphong",
+            "name": "mat2",
+            "base": [1.0, 0.25, 0.25]
+        },
+        {
+            "type": "blinnphong",
+            "name": "mat3",
+            "base": [1.0, 1.0, 1.0]
+        }
+    ],
+    "shapes": [
+        {
+            "type": "sphere",
+            "name": "sphere"
+        }
+    ],
+    "objects": [
+        {
+            "shape": "sphere",
+            "position": [0.0, 0.0, -5.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [2.0, 2.0, 2.0],
+            "material": "mat1"
+        },
+        {
+            "shape": "sphere",
+            "position": [4.0, 3.0, -5.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0],
+            "material": "mat2"
+        },
+        {
+            "shape": "sphere",
+            "position": [7.0, 5.0, -10.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [4.0, 4.0, 4.0],
+            "material": "mat3"
+        }
+    ],
+    "lights": [
+        {
+            "type": "point",
+            "position": [3.0, 3.0, 3.0],
+            "diffuse_power": 40.0,
+            "diffuse": [1.0, 1.0, 1.0],
+            "specular_power": 40.0,
+            "specular": [1.0, 1.0, 1.0]
+        }
+    ]
+}

@@ -13,6 +13,8 @@ find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
 # 1. Look for a SDL2 package, 2. Look for the SDL2maincomponent and 3. DO NOT fail when SDL2main is not available
 find_package(SDL2 REQUIRED CONFIG COMPONENTS SDL2main)
 
+find_package(nlohmann_json 3.2.0 REQUIRED)
+
 add_executable(${PROJECT_NAME}
     src/main.cpp
     src/sdl_window.cpp
@@ -23,7 +25,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE include)
 if(TARGET SDL2::SDL2main)
     target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2main)
 endif()
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 nlohmann_json::nlohmann_json)
 
 enable_testing()
 find_package(GTest REQUIRED)

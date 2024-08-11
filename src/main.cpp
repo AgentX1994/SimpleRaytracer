@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "raytracer.hpp"
+#include "scene.hpp"
 #include "sdl_window.hpp"
 
 using namespace raytracer;
@@ -11,12 +12,13 @@ constexpr int HEIGHT = 600;
 
 int main(int argc, char **argv)
 {
-    std::cout << "Hello, world!" << std::endl;
-    for (int i = 0; i < argc; ++i)
+    std::string file_name = "../scenes/default.json";
+    if (argc == 2)
     {
-        std::cout << '\t' << argv[i] << std::endl;
+        file_name = argv[1];
     }
-    Raytracer rt(WIDTH, HEIGHT);
+    auto scene = Scene<double>::LoadFromJson(file_name);
+    Raytracer rt(WIDTH, HEIGHT, scene);
     // Raytrace
     rt.StartTrace();
 

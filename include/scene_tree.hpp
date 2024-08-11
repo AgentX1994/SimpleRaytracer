@@ -3,7 +3,6 @@
 #include <concepts>
 
 #include "math.hpp"
-#include "scene_object.hpp"
 
 namespace raytracer
 {
@@ -11,7 +10,10 @@ template <std::floating_point T>
 class SceneNode
 {
    public:
-    SceneNode(SceneObject<T> *object) : object(object) {}
+    SceneNode(Shape *shape, Material<T> *material)
+        : shape(shape), material(material)
+    {
+    }
 
     bool Intersect(Ray<T> *r, T max_distance, IntersectionRecord<T> &record)
     {
@@ -19,7 +21,7 @@ class SceneNode
         // Transform the ray into object space, then Intersect, then untransform
         r->direction = cached_world_to_model.TransformVec(r->direction);
         r->origin = cached_world_to_model.TransformPoint(r->origin);
-        auto res = object->Intersect(r, max_distance, record);
+        auto res = shape->Intersect(r, max_distance, record);
         r->direction = cached_transform.TransformVec(r->direction);
         r->origin = cached_transform.TransformPoint(r->origin);
         if (res)
@@ -34,10 +36,8 @@ class SceneNode
     Color<T> Shade(const IntersectionRecord<T> &record,
                    const std::vector<Light<T>> &lights) const
     {
-        return object->Shade(record, lights);
+        return material->Shade(record, lights);
     }
-
-    SceneObject<T> GetObject() { return object; }
 
     void SetTranslation(T x, T y, T z)
     {
@@ -95,8 +95,12 @@ class SceneNode
         }
     }
 
+    Shape *GetShape() { return shape; }
+    Material<T> *GetMaterial() { return material; }
+
    private:
-    SceneObject<T> *object;
+    Shape *shape;
+    Material<T> *material;
 
     Point3<T> translation;
     Vec3<T> rotation;
@@ -113,15 +117,18 @@ class SceneTree
    public:
     SceneTree() {}
 
-    SceneNode<T> &AddNode(SceneObject<T> *object)
+    SceneNode<T> &AddNode(Shape *shape, Material<T> *material)
     {
-        return nodes.emplace_back(SceneNode<T>(object));
+        return nodes.emplace_back(shape, material);
     }
 
-    SceneNode<T> *GetNode(SceneObject<T> *object)
+    SceneNode<T> *GetNode(Shape *shape, Material<T> *material)
     {
-        auto it = std::find(nodes.begin(), nodes.end(), [object](auto &node)
-                            { return node.GetObject() == object; });
+        auto it = std::find(nodes.begin(), nodes.end(),
+                            [shape, material](auto &node) {
+                                return node.GetShape() == shape &&
+                                       node.GetMaterial() == material;
+                            });
         if (it == nodes.end())
         {
             return nullptr;

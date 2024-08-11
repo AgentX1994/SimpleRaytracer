@@ -6,16 +6,17 @@
 
 #include "color.hpp"
 #include "light.hpp"
-#include "material.hpp"
-#include "scene_object.hpp"
 #include "scene_tree.hpp"
 
 static void TraceThreadFunction() {}
 
 namespace raytracer
 {
-Raytracer::Raytracer(int width, int height)
-    : width(width), height(height), pixel_data(4 * width * height, 0)
+Raytracer::Raytracer(int width, int height, Scene<double> scene)
+    : width(width),
+      height(height),
+      scene(scene),
+      pixel_data(4 * width * height, 0)
 {
 }
 
@@ -24,42 +25,6 @@ Raytracer::~Raytracer() {}
 void Raytracer::StartTrace()
 {
     running = true;
-    camera_position = Point3<double>(0, 0, 0);
-
-    // The scene is just a sphere at 0, 0, -5
-    auto &sphere = shapes.emplace_back(std::make_unique<Sphere>());
-    materials.emplace_back(std::make_unique<BlinnPhongMaterial<double>>(
-        Color<double>{0.25, 0.25, 1.0}));
-    materials.emplace_back(std::make_unique<BlinnPhongMaterial<double>>(
-        Color<double>{1.0, 0.25, 0.25}));
-    materials.emplace_back(std::make_unique<BlinnPhongMaterial<double>>(
-        Color<double>{1.0, 1.0, 1.0}));
-    // NormalMaterial<double> material;
-    // PositionMaterial<double> material;
-    objects.emplace_back(sphere.get(), materials[0].get());
-    objects.emplace_back(sphere.get(), materials[1].get());
-    objects.emplace_back(sphere.get(), materials[2].get());
-    {
-        SceneNode<double> &node = scene_tree.AddNode(&objects[0]);
-        node.SetTranslation(0.0, 0.0, -5.0);
-        node.SetScale(2.0);
-        node.UpdateTransforms();
-    }
-    {
-        SceneNode<double> &node = scene_tree.AddNode(&objects[1]);
-        node.SetTranslation(4.0, 3.0, -5.0);
-        node.SetScale(1.0);
-        node.UpdateTransforms();
-    }
-    {
-        SceneNode<double> &node = scene_tree.AddNode(&objects[2]);
-        node.SetTranslation(7.0, 5.0, -10.0);
-        node.SetScale(4.0);
-        node.UpdateTransforms();
-    }
-    lights.emplace_back(Point3<double>(3.0, 3.0, 3.0), 40.0,
-                        Color<double>{1.0, 1.0, 1.0}, 40.0,
-                        Color<double>{1.0, 1.0, 1.0});
     int cell_width = width / 4;
     int cell_height = height / 4;
     for (size_t i = 0; i < 16; i++)
@@ -124,14 +89,14 @@ void Raytracer::ThreadTraceScene(int start_x, int start_y, int width,
             Vec3 pixel_camera_space(pixel_camera_x, pixel_camera_y, -1.0);
             auto dir = pixel_camera_space.ToUnit();
 
-            auto r = Ray(camera_position, dir);
+            auto r = Ray(scene.camera_position, dir);
 
             IntersectionRecord<double> record;
 
             // TODO find a better way to save the hit node
             const SceneNode<double> *hit_node = nullptr;
 
-            for (auto &n : scene_tree)
+            for (auto &n : scene.objects)
             {
                 if (n.Intersect(&r, record.t, record))
                 {
@@ -143,7 +108,7 @@ void Raytracer::ThreadTraceScene(int start_x, int start_y, int width,
                 4 * full_width * (full_height - dy) + 4 * dx;
             if (hit_node != nullptr)
             {
-                auto c = hit_node->Shade(record, lights);
+                auto c = hit_node->Shade(record, scene.lights);
                 // Format is RGBA8888 which is RRGGBBAA
                 pixel_data[pixel_start_index] = c.r * 255;
                 pixel_data[pixel_start_index + 1] = c.g * 255;
