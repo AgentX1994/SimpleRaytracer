@@ -5,147 +5,145 @@
 #include "math.hpp"
 #include "scene_object.hpp"
 
-namespace raytracer {
-    template <std::floating_point T>
-    class SceneNode
+namespace raytracer
+{
+template <std::floating_point T>
+class SceneNode
+{
+   public:
+    SceneNode(SceneObject<T> *object) : object(object) {}
+
+    bool Intersect(Ray<T> *r, T max_distance, IntersectionRecord<T> &record)
     {
-    public:
-        SceneNode(SceneObject<T> *object): object(object) {}
-
-        bool Intersect(Ray<T> *r, T max_distance, IntersectionRecord<T> &record)
+        UpdateTransforms();
+        // Transform the ray into object space, then Intersect, then untransform
+        r->direction = cached_world_to_model.TransformVec(r->direction);
+        r->origin = cached_world_to_model.TransformPoint(r->origin);
+        auto res = object->Intersect(r, max_distance, record);
+        r->direction = cached_transform.TransformVec(r->direction);
+        r->origin = cached_transform.TransformPoint(r->origin);
+        if (res)
         {
-            UpdateTransforms();
-            // Transform the ray into object space, then Intersect, then untransform
-            r->direction = cached_world_to_model.TransformVec(r->direction);
-            r->origin = cached_world_to_model.TransformPoint(r->origin);
-            auto res = object->Intersect(r, max_distance, record);
-            r->direction = cached_transform.TransformVec(r->direction);
-            r->origin = cached_transform.TransformPoint(r->origin);
-            if (res) {
-                record.normal = cached_normal_matrix.TransformVec(record.normal);
-                record.normal.Normalize();
-                record.position = r->Evaluate(record.t);
-            }
-            return res;
+            record.normal = cached_normal_matrix.TransformVec(record.normal);
+            record.normal.Normalize();
+            record.position = r->Evaluate(record.t);
         }
+        return res;
+    }
 
-        Color<T> Shade(const IntersectionRecord<T> &record, const std::vector<Light<T>> &lights) const
-        {
-            return object->Shade(record, lights);
-        }
-
-        SceneObject<T> GetObject() { return object; }
-
-        void SetTranslation(T x, T y, T z)
-        {
-            translation = Point3<T>(x, y, z);
-            transform_dirty = true;
-        }
-
-        void SetTranslation(Point3<T> t)
-        {
-            translation = t;
-            transform_dirty = true;
-        }
-
-        void SetRotation(T x, T y, T z)
-        {
-            rotation = Vec3<T>(x, y, z);
-            transform_dirty = true;
-        }
-
-        void SetRotation(Vec3<T> r)
-        {
-            rotation = r;
-            transform_dirty = true;
-        }
-
-        void SetScale(T s)
-        {
-            scale = s;
-            transform_dirty = true;
-        }
-
-        void SetScale(T x, T y, T z)
-        {
-            scale = Vec3<T>(x, y, z);
-            transform_dirty = true;
-        }
-
-        void SetScale(Vec3<T> s)
-        {
-            scale = s;
-            transform_dirty = true;
-        }
-
-    private:
-        void UpdateTransforms()
-        {
-            if (transform_dirty)
-            {
-                auto trans_mat = Mat4<T>::Translation(translation);
-                auto rot_mat = Mat4<T>::Rotation(rotation);
-                auto scale_mat = Mat4<T>::Scale(scale);
-                cached_transform = trans_mat
-                    * rot_mat
-                    * scale_mat;
-                cached_world_to_model = cached_transform.Invert();
-                cached_normal_matrix = cached_world_to_model.Transpose();
-                transform_dirty = false;
-            }
-        }
-
-        SceneObject<T> *object;
-
-        Point3<T> translation;
-        Vec3<T> rotation;
-        Vec3<T> scale;
-        Mat4<T> cached_transform;
-        Mat4<T> cached_world_to_model;
-        Mat4<T> cached_normal_matrix;
-        bool transform_dirty;
-    };
-
-    template <std::floating_point T>
-    class SceneTree
+    Color<T> Shade(const IntersectionRecord<T> &record,
+                   const std::vector<Light<T>> &lights) const
     {
-    public:
-        SceneTree() {}
+        return object->Shade(record, lights);
+    }
 
-        SceneNode<T> &AddNode(SceneObject<T>* object) {
-            return nodes.emplace_back(SceneNode<T>(object));
-        }
+    SceneObject<T> GetObject() { return object; }
 
-        SceneNode<T> *GetNode(SceneObject<T> *object) {
-            auto it = std::find(
-                    nodes.begin(),
-                    nodes.end(),
-                    [object](auto& node){ return node.GetObject() == object; }
-            );
-            if (it == nodes.end()) {
-                return nullptr;
-            } else {
-                return it.GetObject();
-            }
-        }
+    void SetTranslation(T x, T y, T z)
+    {
+        translation = Point3<T>(x, y, z);
+        transform_dirty = true;
+    }
 
-        std::vector<SceneNode<T>>::iterator begin() {
-            return nodes.begin();
-        }
+    void SetTranslation(Point3<T> t)
+    {
+        translation = t;
+        transform_dirty = true;
+    }
 
-        std::vector<SceneNode<T>>::iterator end() {
-            return nodes.end();
-        }
+    void SetRotation(T x, T y, T z)
+    {
+        rotation = Vec3<T>(x, y, z);
+        transform_dirty = true;
+    }
 
-        std::vector<SceneNode<T>>::const_iterator cbegin() {
-            return nodes.cbegin();
-        }
+    void SetRotation(Vec3<T> r)
+    {
+        rotation = r;
+        transform_dirty = true;
+    }
 
-        std::vector<SceneNode<T>>::const_iterator cend() {
-            return nodes.cend();
+    void SetScale(T s)
+    {
+        scale = s;
+        transform_dirty = true;
+    }
+
+    void SetScale(T x, T y, T z)
+    {
+        scale = Vec3<T>(x, y, z);
+        transform_dirty = true;
+    }
+
+    void SetScale(Vec3<T> s)
+    {
+        scale = s;
+        transform_dirty = true;
+    }
+
+    void UpdateTransforms()
+    {
+        if (transform_dirty)
+        {
+            auto trans_mat = Mat4<T>::Translation(translation);
+            auto rot_mat = Mat4<T>::Rotation(rotation);
+            auto scale_mat = Mat4<T>::Scale(scale);
+            cached_transform = trans_mat * rot_mat * scale_mat;
+            cached_world_to_model = cached_transform.Invert();
+            cached_normal_matrix = cached_world_to_model.Transpose();
+            transform_dirty = false;
         }
-    private:
-        
-        std::vector<SceneNode<T>> nodes;
-    };
-}
+    }
+
+   private:
+    SceneObject<T> *object;
+
+    Point3<T> translation;
+    Vec3<T> rotation;
+    Vec3<T> scale;
+    Mat4<T> cached_transform;
+    Mat4<T> cached_world_to_model;
+    Mat4<T> cached_normal_matrix;
+    bool transform_dirty;
+};
+
+template <std::floating_point T>
+class SceneTree
+{
+   public:
+    SceneTree() {}
+
+    SceneNode<T> &AddNode(SceneObject<T> *object)
+    {
+        return nodes.emplace_back(SceneNode<T>(object));
+    }
+
+    SceneNode<T> *GetNode(SceneObject<T> *object)
+    {
+        auto it = std::find(nodes.begin(), nodes.end(), [object](auto &node)
+                            { return node.GetObject() == object; });
+        if (it == nodes.end())
+        {
+            return nullptr;
+        }
+        else
+        {
+            return it.GetObject();
+        }
+    }
+
+    std::vector<SceneNode<T>>::iterator begin() { return nodes.begin(); }
+
+    std::vector<SceneNode<T>>::iterator end() { return nodes.end(); }
+
+    std::vector<SceneNode<T>>::const_iterator cbegin()
+    {
+        return nodes.cbegin();
+    }
+
+    std::vector<SceneNode<T>>::const_iterator cend() { return nodes.cend(); }
+
+   private:
+    std::vector<SceneNode<T>> nodes;
+};
+}  // namespace raytracer

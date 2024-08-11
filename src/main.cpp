@@ -1,8 +1,8 @@
 #include <iostream>
 #include <vector>
 
-#include "sdl_window.hpp"
 #include "raytracer.hpp"
+#include "sdl_window.hpp"
 
 using namespace raytracer;
 
