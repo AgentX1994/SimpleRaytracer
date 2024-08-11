@@ -57,6 +57,11 @@ void Raytracer::ThreadTraceScene(int start_x, int start_y, int width,
     auto thread_id = std::this_thread::get_id();
     std::cout << "Tracing thread started, id = " << thread_id
               << ", start_x = " << start_x << ", start_y = " << start_y << '\n';
+    auto camera_transform = Mat4<double>(
+        1.0, 0.0, -scene.camera_direction.x(), scene.camera_position.x(), 0.0,
+        1.0, -scene.camera_direction.y(), scene.camera_position.y(), 0.0, 0.0,
+        -scene.camera_direction.z(), scene.camera_position.z(), 0.0, 0.0, 0.0,
+        1.0);
     for (int dx = start_x; dx < start_x + width; ++dx)
     {
         if (!running)
@@ -87,9 +92,11 @@ void Raytracer::ThreadTraceScene(int start_x, int start_y, int width,
             double pixel_camera_y =
                 pixel_screen_y * std::tan(fovy / 2.0 * DEGREES_TO_RADIANS);
             Vec3 pixel_camera_space(pixel_camera_x, pixel_camera_y, -1.0);
-            auto dir = pixel_camera_space.ToUnit();
+            auto pixel_world_space =
+                camera_transform.TransformPoint(pixel_camera_space);
 
-            auto r = Ray(scene.camera_position, dir);
+            auto r = Ray(scene.camera_position,
+                         (pixel_world_space - scene.camera_position).ToUnit());
 
             IntersectionRecord<double> record;
 
