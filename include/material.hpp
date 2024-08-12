@@ -22,8 +22,10 @@ class Material
                            const std::vector<Light<T>> &lights) = 0;
 
     bool IsReflective() const { return reflectivity > 0.0; }
+    T GetReflectivity() const { return reflectivity; }
 
     bool IsTransmissive() const { return transmissibility > 0.0; }
+    T GetTransmissibility() const { return transmissibility; }
 
     T reflectivity = 0.0;
     T transmissibility = 0.0;
@@ -66,7 +68,7 @@ class BlinnPhongMaterial : public Material<T>
                      base_color / distance_squared;
         }
 
-        return c.SaturateColor();
+        return c;
     }
 
    private:

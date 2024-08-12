@@ -44,7 +44,11 @@ class SceneNode
 
     bool IsReflective() const { return material->IsReflective(); }
 
+    T GetReflectivity() const { return material->GetReflectivity(); }
+
     bool IsTransmissive() const { return material->IsTransmissive(); }
+
+    T GetTransmissibility() const { return material->GetTransmissibility(); }
 
     void SetTranslation(T x, T y, T z)
     {

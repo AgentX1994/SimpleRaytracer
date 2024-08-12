@@ -4,28 +4,41 @@
         "forward": [0.3, 0.0, -1.0],
         "up": [0.0, 1.0, 0.0]
     },
+    "clear_color": [0.3, 0.5, 0.9],
     "materials": [
         {
             "type": "blinnphong",
             "name": "mat1",
-            "base": [0.25, 0.25, 1.0]
+            "base": [0.25, 0.25, 1.0],
+            "reflectivity": 0.07
         },
         {
             "type": "blinnphong",
             "name": "mat2",
             "base": [1.0, 0.25, 0.25],
-            "reflectivity": 1.0
+            "reflectivity": 0.5
         },
         {
             "type": "blinnphong",
             "name": "mat3",
-            "base": [1.0, 1.0, 1.0]
+            "base": [1.0, 1.0, 1.0],
+            "reflectivity": 0.05
+        },
+        {
+            "type": "blinnphong",
+            "name": "plane_mat",
+            "base": [0.4, 1.0, 0.7],
+            "reflectivity": 0.05
         }
     ],
     "shapes": [
         {
             "type": "sphere",
             "name": "sphere"
+        },
+        {
+            "type": "plane",
+            "name": "plane"
         }
     ],
     "objects": [
@@ -49,15 +62,30 @@
             "rotation": [0.0, 0.0, 0.0],
             "scale": [4.0, 4.0, 4.0],
             "material": "mat3"
+        },
+        {
+            "shape": "plane",
+            "position": [0.0, -2.0, 0.0],
+            "rotation": [-1.5707963267948966, 0.0, 0.0],
+            "scale": [20.0, 20.0, 20.0],
+            "material": "plane_mat"
         }
     ],
     "lights": [
         {
             "type": "point",
             "position": [3.0, 3.0, 3.0],
-            "diffuse_power": 40.0,
+            "diffuse_power": 30.0,
             "diffuse": [1.0, 1.0, 1.0],
-            "specular_power": 40.0,
+            "specular_power": 10.0,
+            "specular": [1.0, 1.0, 1.0]
+        },
+        {
+            "type": "point",
+            "position": [-5.0, -1.0, -5.0],
+            "diffuse_power": 3.0,
+            "diffuse": [1.0, 1.0, 1.0],
+            "specular_power": 0.5,
             "specular": [1.0, 1.0, 1.0]
         }
     ]

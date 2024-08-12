@@ -595,4 +595,60 @@ class Sphere : public Shape
         return true;
     }
 };
+
+class Plane : public Shape
+{
+   public:
+    Plane() {}
+
+    bool Intersect(Ray<float> *ray, float min_distance, float max_distance,
+                   IntersectionRecord<float> &record) override
+    {
+        return IntersectInner(ray, min_distance, max_distance, record);
+    }
+    bool Intersect(Ray<double> *ray, double min_distance, double max_distance,
+                   IntersectionRecord<double> &record) override
+    {
+        return IntersectInner(ray, min_distance, max_distance, record);
+    }
+
+   private:
+    template <std::floating_point T>
+    bool IntersectInner(Ray<T> *ray, T min_distance, T max_distance,
+                        IntersectionRecord<T> &record)
+    {
+        // This plane is the x-y plane, with equation 0x+0y+z=0,
+        // and width and height 1
+        // based on
+        // https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection.html
+        T denom = ray->direction.z();
+        if (std::abs(denom) > 1e-6)
+        {
+            // Since we assume this plane is the x-y plane, the distance from
+            // the origin to the plane is just the z coordinate of the ray
+            T t = -ray->origin.z() / denom;
+            if (t < min_distance || t >= max_distance)
+            {
+                return false;
+            }
+            auto pos = ray->Evaluate(t);
+            // this should determine if the pos is outside of the desired
+            // region of the plane
+            auto pos_x = std::abs(pos.x());
+            auto pos_y = std::abs(pos.y());
+            if (pos_x > 0.5 || pos_y > 0.5)
+            {
+                return false;
+            }
+            record.t = t;
+            record.ray = ray;
+            record.position = pos;
+            record.normal = Vec3<T>(0.0, 0.0, 1.0);
+            record.shape = this;
+            return true;
+        }
+
+        return false;
+    }
+};
 }  // namespace raytracer

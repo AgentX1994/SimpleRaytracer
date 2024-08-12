@@ -112,6 +112,7 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
             auto pixel_start_index =
                 4 * full_width * (full_height - dy) + 4 * dx;
             // Format is RGBA8888 which is RRGGBBAA
+            c = c.SaturateColor();
             pixel_data[pixel_start_index] = c.r * 255;
             pixel_data[pixel_start_index + 1] = c.g * 255;
             pixel_data[pixel_start_index + 2] = c.b * 255;
@@ -146,14 +147,14 @@ Color<double> Raytracer::TraceRay(Ray<double> r, double min_distance)
             auto reflection_dir = Reflect(r.direction, record.normal);
             auto reflection_ray = Ray<double>(record.position, reflection_dir);
 
-            c += TraceRay(reflection_ray, 0.1);
+            c += hit_node->GetReflectivity() * TraceRay(reflection_ray, 0.1);
         }
 
         return c;
     }
     else
     {
-        return Color<double>{0.0, 0.0, 0.0};
+        return scene.clear_color;
     }
 }
 }  // namespace raytracer

@@ -26,9 +26,14 @@ using LightVector = std::vector<Light<T>>;
 
 static std::shared_ptr<Shape> ReadShape(const nlohmann::json& shape_obj)
 {
-    if (shape_obj["type"] == "sphere")
+    auto& type = shape_obj["type"];
+    if (type == "sphere")
     {
         return std::make_shared<Sphere>();
+    }
+    else if (type == "plane")
+    {
+        return std::make_shared<Plane>();
     }
     else
     {
@@ -189,6 +194,13 @@ class Scene
         auto& camera_up = camera_obj["up"];
         scene.camera.SetUp(Vec3<T>(camera_up[0], camera_up[1], camera_up[2]));
 
+        if (scene_obj.contains("clear_color"))
+        {
+            auto& clear_color = scene_obj["clear_color"];
+            scene.clear_color =
+                Color<T>{clear_color[0], clear_color[1], clear_color[2]};
+        }
+
         for (auto& shape_obj : scene_obj["shapes"])
         {
             scene.shapes[shape_obj["name"]] = ReadShape(shape_obj);
@@ -215,6 +227,7 @@ class Scene
     }
 
     Camera<T> camera;
+    Color<T> clear_color;
     ShapeMap shapes;
     MaterialMap<T> materials;
     NodeVector<T> objects;
