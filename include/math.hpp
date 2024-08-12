@@ -178,6 +178,13 @@ inline T Dot(Vec3<T> left, Vec3<T> right)
 }
 
 template <std::floating_point T>
+inline Vec3<T> Reflect(Vec3<T> direction, Vec3<T> normal)
+{
+    auto new_dir = direction - 2.0 * Dot(direction, normal) * normal;
+    return new_dir;
+}
+
+template <std::floating_point T>
 class Mat4
 {
    public:
@@ -513,9 +520,11 @@ class Shape
    public:
     virtual ~Shape() = default;
 
-    virtual bool Intersect(Ray<float> *ray, float max_distance,
+    virtual bool Intersect(Ray<float> *ray, float min_distance,
+                           float max_distance,
                            IntersectionRecord<float> &record) = 0;
-    virtual bool Intersect(Ray<double> *ray, double max_distance,
+    virtual bool Intersect(Ray<double> *ray, double min_distance,
+                           double max_distance,
                            IntersectionRecord<double> &record) = 0;
 };
 
@@ -524,20 +533,20 @@ class Sphere : public Shape
    public:
     Sphere() {}
 
-    bool Intersect(Ray<float> *ray, float max_distance,
+    bool Intersect(Ray<float> *ray, float min_distance, float max_distance,
                    IntersectionRecord<float> &record) override
     {
-        return IntersectInner(ray, max_distance, record);
+        return IntersectInner(ray, min_distance, max_distance, record);
     }
-    bool Intersect(Ray<double> *ray, double max_distance,
+    bool Intersect(Ray<double> *ray, double min_distance, double max_distance,
                    IntersectionRecord<double> &record) override
     {
-        return IntersectInner(ray, max_distance, record);
+        return IntersectInner(ray, min_distance, max_distance, record);
     }
 
    private:
     template <std::floating_point T>
-    bool IntersectInner(Ray<T> *ray, T max_distance,
+    bool IntersectInner(Ray<T> *ray, T min_distance, T max_distance,
                         IntersectionRecord<T> &record)
     {
         // Center is implicitly at 0, 0, 0, and radius is 1
@@ -562,7 +571,7 @@ class Sphere : public Shape
             }
         }
 
-        if (t0 >= max_distance)
+        if (t0 < min_distance || t0 >= max_distance)
         {
             return false;
         }

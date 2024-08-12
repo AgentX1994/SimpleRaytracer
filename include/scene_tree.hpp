@@ -2,6 +2,8 @@
 
 #include <concepts>
 
+#include "light.hpp"
+#include "material.hpp"
 #include "math.hpp"
 
 namespace raytracer
@@ -15,13 +17,14 @@ class SceneNode
     {
     }
 
-    bool Intersect(Ray<T> *r, T max_distance, IntersectionRecord<T> &record)
+    bool Intersect(Ray<T> *r, T min_distance, T max_distance,
+                   IntersectionRecord<T> &record)
     {
         UpdateTransforms();
         // Transform the ray into object space, then Intersect, then untransform
         r->direction = cached_world_to_model.TransformVec(r->direction);
         r->origin = cached_world_to_model.TransformPoint(r->origin);
-        auto res = shape->Intersect(r, max_distance, record);
+        auto res = shape->Intersect(r, min_distance, max_distance, record);
         r->direction = cached_transform.TransformVec(r->direction);
         r->origin = cached_transform.TransformPoint(r->origin);
         if (res)
@@ -38,6 +41,10 @@ class SceneNode
     {
         return material->Shade(record, lights);
     }
+
+    bool IsReflective() const { return material->IsReflective(); }
+
+    bool IsTransmissive() const { return material->IsTransmissive(); }
 
     void SetTranslation(T x, T y, T z)
     {

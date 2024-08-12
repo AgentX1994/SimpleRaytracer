@@ -12,17 +12,31 @@ template <std::floating_point T>
 class Material
 {
    public:
+    Material<T>(T reflectivity, T transmissibility)
+        : reflectivity(reflectivity), transmissibility(transmissibility)
+    {
+    }
     virtual ~Material() = default;
 
     virtual Color<T> Shade(const IntersectionRecord<T> &record,
                            const std::vector<Light<T>> &lights) = 0;
+
+    bool IsReflective() const { return reflectivity > 0.0; }
+
+    bool IsTransmissive() const { return transmissibility > 0.0; }
+
+    T reflectivity = 0.0;
+    T transmissibility = 0.0;
 };
 
 template <std::floating_point T>
 class BlinnPhongMaterial : public Material<T>
 {
    public:
-    BlinnPhongMaterial(Color<T> base) : base_color(base) {}
+    BlinnPhongMaterial(Color<T> base, T reflectivity, T transmissibility)
+        : Material<T>(reflectivity, transmissibility), base_color(base)
+    {
+    }
 
     Color<T> Shade(const IntersectionRecord<T> &record,
                    const std::vector<Light<T>> &lights) override
@@ -63,6 +77,8 @@ template <std::floating_point T>
 class NormalMaterial : public Material<T>
 {
    public:
+    NormalMaterial<T>() : Material<T>(0.0, 0.0) {}
+
     Color<T> Shade(const IntersectionRecord<T> &record,
                    const std::vector<Light<T>> & /*lights*/) override
     {
@@ -76,6 +92,8 @@ template <std::floating_point T>
 class PositionMaterial : public Material<T>
 {
    public:
+    PositionMaterial<T>() : Material<T>(0.0, 0.0) {}
+
     Color<T> Shade(const IntersectionRecord<T> &record,
                    const std::vector<Light<T>> & /*lights*/) override
     {

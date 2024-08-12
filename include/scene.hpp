@@ -43,8 +43,11 @@ std::shared_ptr<Material<T>> ReadMaterial(const nlohmann::json& mat_obj)
     if (type == "blinnphong")
     {
         auto& base_obj = mat_obj["base"];
+        auto reflectivity = mat_obj.value("reflectivity", (T)0.0);
+        auto transmissibility = mat_obj.value("transmissibility", (T)0.0);
         Color<T> base = {base_obj[0], base_obj[1], base_obj[2]};
-        return std::make_shared<BlinnPhongMaterial<T>>(base);
+        return std::make_shared<BlinnPhongMaterial<T>>(base, reflectivity,
+                                                       transmissibility);
     }
     else if (type == "normal")
     {

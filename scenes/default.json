@@ -13,7 +13,8 @@
         {
             "type": "blinnphong",
             "name": "mat2",
-            "base": [1.0, 0.25, 0.25]
+            "base": [1.0, 0.25, 0.25],
+            "reflectivity": 1.0
         },
         {
             "type": "blinnphong",

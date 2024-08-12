@@ -107,40 +107,53 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
                 Ray(scene.camera.GetPosition(),
                     (pixel_world_space - scene.camera.GetPosition()).ToUnit());
 
-            IntersectionRecord<double> record;
-
-            // TODO find a better way to save the hit node
-            const SceneNode<double> *hit_node = nullptr;
-
-            for (auto &n : scene.objects)
-            {
-                if (n.Intersect(&r, record.t, record))
-                {
-                    hit_node = &n;
-                }
-            }
+            auto c = TraceRay(r, 0.0);
 
             auto pixel_start_index =
                 4 * full_width * (full_height - dy) + 4 * dx;
-            if (hit_node != nullptr)
-            {
-                auto c = hit_node->Shade(record, scene.lights);
-                // Format is RGBA8888 which is RRGGBBAA
-                pixel_data[pixel_start_index] = c.r * 255;
-                pixel_data[pixel_start_index + 1] = c.g * 255;
-                pixel_data[pixel_start_index + 2] = c.b * 255;
-                pixel_data[pixel_start_index + 3] = 255;
-            }
-            else
-            {
-                pixel_data[pixel_start_index] = 0;
-                pixel_data[pixel_start_index + 1] = 0;
-                pixel_data[pixel_start_index + 2] = 0;
-                pixel_data[pixel_start_index + 3] = 255;
-            }
+            // Format is RGBA8888 which is RRGGBBAA
+            pixel_data[pixel_start_index] = c.r * 255;
+            pixel_data[pixel_start_index + 1] = c.g * 255;
+            pixel_data[pixel_start_index + 2] = c.b * 255;
+            pixel_data[pixel_start_index + 3] = 255;
         }
     }
     std::cout << "Tracing thread " << thread_index << " done\n";
     thread_status[thread_index].store(true);
+}
+
+Color<double> Raytracer::TraceRay(Ray<double> r, double min_distance)
+{
+    IntersectionRecord<double> record;
+
+    // TODO find a better way to save the hit node
+    const SceneNode<double> *hit_node = nullptr;
+
+    for (auto &n : scene.objects)
+    {
+        if (n.Intersect(&r, min_distance, record.t, record))
+        {
+            hit_node = &n;
+        }
+    }
+
+    if (hit_node != nullptr)
+    {
+        auto c = hit_node->Shade(record, scene.lights);
+
+        if (hit_node->IsReflective())
+        {
+            auto reflection_dir = Reflect(r.direction, record.normal);
+            auto reflection_ray = Ray<double>(record.position, reflection_dir);
+
+            c += TraceRay(reflection_ray, 0.1);
+        }
+
+        return c;
+    }
+    else
+    {
+        return Color<double>{0.0, 0.0, 0.0};
+    }
 }
 }  // namespace raytracer
