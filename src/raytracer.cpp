@@ -1,5 +1,6 @@
 #include "raytracer.hpp"
 
+#include <algorithm>
 #include <iostream>
 #include <numbers>
 #include <thread>
@@ -12,7 +13,7 @@ static void TraceThreadFunction() {}
 
 namespace raytracer
 {
-Raytracer::Raytracer(int width, int height, Scene<double> scene)
+Raytracer::Raytracer(int width, int height, Scene<double> &scene)
     : width(width),
       height(height),
       scene(scene),
@@ -24,6 +25,10 @@ Raytracer::~Raytracer() {}
 
 void Raytracer::StartTrace()
 {
+    if (running == true)
+    {
+        StopTrace();
+    }
     running = true;
     int cell_width = width / 4;
     int cell_height = height / 4;
@@ -31,10 +36,17 @@ void Raytracer::StartTrace()
     {
         int start_x = (i * cell_width) % width;
         int start_y = (i / 4) * cell_height;
-        tracing_threads.emplace_back(&Raytracer::ThreadTraceScene, this,
-                                     start_x, start_y, cell_width, cell_height,
-                                     width, height);
+        thread_status[i].store(false);
+        tracing_threads[i] =
+            std::thread(&Raytracer::ThreadTraceScene, this, i, start_x, start_y,
+                        cell_width, cell_height, width, height);
     }
+}
+
+bool Raytracer::IsTraceDone()
+{
+    return std::all_of(thread_status.begin(), thread_status.end(),
+                       [](auto &b) { return b.load(); });
 }
 
 void Raytracer::StopTrace()
@@ -51,17 +63,13 @@ void Raytracer::StopTrace()
 
 const std::vector<uint8_t> &Raytracer::GetPixels() { return pixel_data; }
 
-void Raytracer::ThreadTraceScene(int start_x, int start_y, int width,
-                                 int height, int full_width, int full_height)
+void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
+                                 int width, int height, int full_width,
+                                 int full_height)
 {
-    auto thread_id = std::this_thread::get_id();
-    std::cout << "Tracing thread started, id = " << thread_id
+    std::cout << "Tracing thread started, id = " << thread_index
               << ", start_x = " << start_x << ", start_y = " << start_y << '\n';
-    auto camera_transform = Mat4<double>(
-        1.0, 0.0, -scene.camera_direction.x(), scene.camera_position.x(), 0.0,
-        1.0, -scene.camera_direction.y(), scene.camera_position.y(), 0.0, 0.0,
-        -scene.camera_direction.z(), scene.camera_position.z(), 0.0, 0.0, 0.0,
-        1.0);
+    auto camera_transform = scene.camera.GetTransform();
     for (int dx = start_x; dx < start_x + width; ++dx)
     {
         if (!running)
@@ -95,8 +103,9 @@ void Raytracer::ThreadTraceScene(int start_x, int start_y, int width,
             auto pixel_world_space =
                 camera_transform.TransformPoint(pixel_camera_space);
 
-            auto r = Ray(scene.camera_position,
-                         (pixel_world_space - scene.camera_position).ToUnit());
+            auto r =
+                Ray(scene.camera.GetPosition(),
+                    (pixel_world_space - scene.camera.GetPosition()).ToUnit());
 
             IntersectionRecord<double> record;
 
@@ -131,6 +140,7 @@ void Raytracer::ThreadTraceScene(int start_x, int start_y, int width,
             }
         }
     }
-    std::cout << "Tracing thread " << thread_id << " done\n";
+    std::cout << "Tracing thread " << thread_index << " done\n";
+    thread_status[thread_index].store(true);
 }
 }  // namespace raytracer

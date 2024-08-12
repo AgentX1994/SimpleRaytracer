@@ -182,8 +182,9 @@ class Mat4
 {
    public:
     Mat4() : elements({0.0}) {}
-    template <typename... VARARGS>
-    Mat4(VARARGS &&...elems) : elements{{std::forward<VARARGS>(elems)...}}
+    Mat4(const Mat4<T> &other) : elements(other.elements) {}
+    Mat4(std::convertible_to<T> auto &&...elems)
+        : elements{{std::forward<typeof(elems)>(elems)...}}
     {
     }
 

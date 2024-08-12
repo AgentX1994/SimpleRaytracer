@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 #include <stdexcept>
 
+#include "camera.hpp"
 #include "material.hpp"
 #include "math.hpp"
 #include "scene_tree.hpp"
@@ -177,12 +178,13 @@ class Scene
         Scene<T> scene;
         auto& camera_obj = scene_obj["camera"];
         auto& camera_pos = camera_obj["position"];
-        scene.camera_position =
-            Point3<T>(camera_pos[0], camera_pos[1], camera_pos[2]);
-        auto& camera_dir = camera_obj["direction"];
-        scene.camera_direction =
-            Vec3<T>(camera_dir[0], camera_dir[1], camera_dir[2]);
-        scene.camera_direction.Normalize();
+        scene.camera.SetPosition(
+            Point3<T>(camera_pos[0], camera_pos[1], camera_pos[2]));
+        auto& camera_forward = camera_obj["forward"];
+        scene.camera.SetForward(
+            Vec3<T>(camera_forward[0], camera_forward[1], camera_forward[2]));
+        auto& camera_up = camera_obj["up"];
+        scene.camera.SetUp(Vec3<T>(camera_up[0], camera_up[1], camera_up[2]));
 
         for (auto& shape_obj : scene_obj["shapes"])
         {
@@ -209,8 +211,7 @@ class Scene
         return scene;
     }
 
-    Point3<T> camera_position;
-    Vec3<T> camera_direction;
+    Camera<T> camera;
     ShapeMap shapes;
     MaterialMap<T> materials;
     NodeVector<T> objects;
