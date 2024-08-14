@@ -7,6 +7,7 @@
 
 #include "color.hpp"
 #include "light.hpp"
+#include "math.hpp"
 #include "scene_tree.hpp"
 
 static void TraceThreadFunction() {}
@@ -107,7 +108,8 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
                 Ray(scene.camera.GetPosition(),
                     (pixel_world_space - scene.camera.GetPosition()).ToUnit());
 
-            auto c = TraceRay(r, 0.0);
+            constexpr size_t MAX_RAYS_TO_TRACE = 10;
+            auto c = TraceRay(r, 0.0, MAX_RAYS_TO_TRACE);
 
             auto pixel_start_index =
                 4 * full_width * (full_height - dy) + 4 * dx;
@@ -123,8 +125,13 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
     thread_status[thread_index].store(true);
 }
 
-Color<double> Raytracer::TraceRay(Ray<double> r, double min_distance)
+Color<double> Raytracer::TraceRay(Ray<double> r, double min_distance,
+                                  size_t rays_remaining)
 {
+    if (rays_remaining <= 0)
+    {
+        return Color<double>();
+    }
     IntersectionRecord<double> record;
 
     // TODO find a better way to save the hit node
@@ -138,16 +145,35 @@ Color<double> Raytracer::TraceRay(Ray<double> r, double min_distance)
         }
     }
 
+    constexpr double BIAS = 0.01;
     if (hit_node != nullptr)
     {
         auto c = hit_node->Shade(record, scene.lights);
 
-        if (hit_node->IsReflective())
+        FresnelTerms<double> terms =
+            hit_node->GetFresnelTerms(record.ray->direction, record.normal);
+        bool outside = Dot(record.ray->direction, record.normal) < 0;
+        Vec3<double> bias = BIAS * record.normal;
+        if (terms.reflective != 0.0)
         {
-            auto reflection_dir = Reflect(r.direction, record.normal);
-            auto reflection_ray = Ray<double>(record.position, reflection_dir);
+            auto reflection_dir = Reflect(record.ray->direction, record.normal);
+            Vec3<double> new_origin =
+                outside ? record.position + bias : record.position - bias;
+            auto reflection_ray = Ray<double>(new_origin, reflection_dir);
 
-            c += hit_node->GetReflectivity() * TraceRay(reflection_ray, 0.1);
+            c += terms.reflective *
+                 TraceRay(reflection_ray, 0.0, rays_remaining - 1);
+        }
+        if (terms.refractive != 0.0)
+        {
+            auto refraction_dir = Refract(record.ray->direction, record.normal,
+                                          hit_node->GetRefractiveIndex());
+            Vec3<double> new_origin =
+                outside ? record.position - bias : record.position + bias;
+            auto refraction_ray = Ray<double>(new_origin, refraction_dir);
+
+            c += terms.refractive *
+                 TraceRay(refraction_ray, 0.0, rays_remaining - 1);
         }
 
         return c;

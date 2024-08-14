@@ -3,6 +3,7 @@
 #include <array>
 #include <cassert>
 #include <concepts>
+#include <iostream>
 #include <ostream>
 #include <span>
 #include <stdexcept>
@@ -178,10 +179,76 @@ inline T Dot(Vec3<T> left, Vec3<T> right)
 }
 
 template <std::floating_point T>
-inline Vec3<T> Reflect(Vec3<T> direction, Vec3<T> normal)
+struct FresnelTerms
+{
+    T reflective;
+    T refractive;
+};
+
+template <std::floating_point T>
+FresnelTerms<T> fresnel(const Vec3<T> &incoming, const Vec3<T> &normal,
+                        T refractive_index)
+{
+    T cos_i = Clamp(Dot(incoming, normal), -1.0, 1.0);
+
+    T eta_i = 1.0, eta_t = refractive_index;
+    if (cos_i > 0)
+    {
+        std::swap(eta_i, eta_t);
+    }
+    T sin_t = eta_i / eta_t * std::sqrt(std::max(0.0, 1.0 - cos_i * cos_i));
+    if (sin_t >= 1.0)
+    {
+        // Total internal reflection
+        return FresnelTerms<T>{1.0, 0.0};
+    }
+    else
+    {
+        T cos_t = std::sqrt(std::max(0.0, 1.0 - sin_t * sin_t));
+        cos_i = std::abs(cos_i);
+        T r_perp = ((eta_t * cos_i) - (eta_i * cos_t)) /
+                   ((eta_t * cos_i) + (eta_i * cos_t));
+        T r_para = ((eta_i * cos_i) - (eta_t * cos_t)) /
+                   ((eta_i * cos_i) + (eta_t * cos_t));
+        T reflective = (r_perp * r_perp + r_para * r_para) / 2.0;
+        return FresnelTerms<T>{reflective, 1.0 - reflective};
+    }
+}
+
+template <std::floating_point T>
+inline Vec3<T> Reflect(const Vec3<T> &direction, const Vec3<T> &normal)
 {
     auto new_dir = direction - 2.0 * Dot(direction, normal) * normal;
     return new_dir;
+}
+
+template <std::floating_point T>
+inline Vec3<T> Refract(const Vec3<T> &incoming, const Vec3<T> &normal,
+                       T refractive_index)
+{
+    T cos_i = Clamp(Dot(incoming, normal), -1.0, 1.0);
+
+    T eta_i = 1.0, eta_t = refractive_index;
+    Vec3<T> n = normal;
+    if (cos_i < 0.0)
+    {
+        cos_i = -cos_i;
+    }
+    else
+    {
+        std::swap(eta_i, eta_t);
+        n = n.Reverse();
+    }
+    T eta = eta_i / eta_t;
+    T k = 1.0 - eta * eta * (1.0 - cos_i * cos_i);
+    if (k < 0.0)
+    {
+        return Vec3<T>();
+    }
+    else
+    {
+        return eta * incoming + (eta * cos_i - std::sqrt(k)) * n;
+    }
 }
 
 template <std::floating_point T>
@@ -420,8 +487,8 @@ template <std::floating_point T>
 Mat4<T> operator*(const Mat4<T> &left, const Mat4<T> &right)
 {
     // Matrix multiplication
-    // Element x, y of the output is the dot product of the xth row of the left
-    // and yth column of the right matrix
+    // Element x, y of the output is the dot product of the xth row of the
+    // left and yth column of the right matrix
     // TODO: optimize this
     Mat4<T> out;
     out[0][0] = left[0][0] * right[0][0] + left[0][1] * right[1][0] +
@@ -537,7 +604,7 @@ class Sphere : public Shape
                    IntersectionRecord<float> &record) override
     {
         return IntersectInner(ray, min_distance, max_distance, record);
-    }
+    }  // namespace raytracer
     bool Intersect(Ray<double> *ray, double min_distance, double max_distance,
                    IntersectionRecord<double> &record) override
     {
@@ -624,8 +691,9 @@ class Plane : public Shape
         T denom = ray->direction.z();
         if (std::abs(denom) > 1e-6)
         {
-            // Since we assume this plane is the x-y plane, the distance from
-            // the origin to the plane is just the z coordinate of the ray
+            // Since we assume this plane is the x-y plane, the distance
+            // from the origin to the plane is just the z coordinate of the
+            // ray
             T t = -ray->origin.z() / denom;
             if (t < min_distance || t >= max_distance)
             {
@@ -637,6 +705,63 @@ class Plane : public Shape
             auto pos_x = std::abs(pos.x());
             auto pos_y = std::abs(pos.y());
             if (pos_x > 0.5 || pos_y > 0.5)
+            {
+                return false;
+            }
+            record.t = t;
+            record.ray = ray;
+            record.position = pos;
+            record.normal = Vec3<T>(0.0, 0.0, 1.0);
+            record.shape = this;
+            return true;
+        }
+
+        return false;
+    }
+};
+
+class Disc : public Shape
+{
+   public:
+    Disc() {}
+
+    bool Intersect(Ray<float> *ray, float min_distance, float max_distance,
+                   IntersectionRecord<float> &record) override
+    {
+        return IntersectInner(ray, min_distance, max_distance, record);
+    }
+    bool Intersect(Ray<double> *ray, double min_distance, double max_distance,
+                   IntersectionRecord<double> &record) override
+    {
+        return IntersectInner(ray, min_distance, max_distance, record);
+    }
+
+   private:
+    template <std::floating_point T>
+    bool IntersectInner(Ray<T> *ray, T min_distance, T max_distance,
+                        IntersectionRecord<T> &record)
+    {
+        // The logic is basically the same as with planes, but with
+        // a different distance check
+        // This plane is the x-y plane, with equation 0x+0y+z=0,
+        // and radius 1
+        // based on
+        // https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-plane-and-ray-disk-intersection.html
+        T denom = ray->direction.z();
+        if (std::abs(denom) > 1e-6)
+        {
+            // Since we assume this plane is the x-y plane, the distance
+            // from the origin to the plane is just the z coordinate of the
+            // ray
+            T t = -ray->origin.z() / denom;
+            if (t < min_distance || t >= max_distance)
+            {
+                return false;
+            }
+            auto pos = ray->Evaluate(t);
+            //  this should determine if the pos is outside of the desired
+            //  region of the plane
+            if (pos.LengthSquared() > 1.0)
             {
                 return false;
             }

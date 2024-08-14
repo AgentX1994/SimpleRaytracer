@@ -42,13 +42,13 @@ class SceneNode
         return material->Shade(record, lights);
     }
 
-    bool IsReflective() const { return material->IsReflective(); }
+    FresnelTerms<T> GetFresnelTerms(const Vec3<T> &incoming,
+                                    const Vec3<T> &normal) const
+    {
+        return material->GetFresnelTerms(incoming, normal);
+    }
 
-    T GetReflectivity() const { return material->GetReflectivity(); }
-
-    bool IsTransmissive() const { return material->IsTransmissive(); }
-
-    T GetTransmissibility() const { return material->GetTransmissibility(); }
+    T GetRefractiveIndex() const { return material->GetRefractiveIndex(); }
 
     void SetTranslation(T x, T y, T z)
     {

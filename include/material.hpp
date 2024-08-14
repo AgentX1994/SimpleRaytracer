@@ -12,23 +12,19 @@ template <std::floating_point T>
 class Material
 {
    public:
-    Material<T>(T reflectivity, T transmissibility)
-        : reflectivity(reflectivity), transmissibility(transmissibility)
-    {
-    }
+    Material<T>() {}
     virtual ~Material() = default;
 
     virtual Color<T> Shade(const IntersectionRecord<T> &record,
                            const std::vector<Light<T>> &lights) = 0;
 
-    bool IsReflective() const { return reflectivity > 0.0; }
-    T GetReflectivity() const { return reflectivity; }
+    virtual FresnelTerms<T> GetFresnelTerms(const Vec3<T> &incoming,
+                                            const Vec3<T> &normal) const
+    {
+        return FresnelTerms<T>();
+    };
 
-    bool IsTransmissive() const { return transmissibility > 0.0; }
-    T GetTransmissibility() const { return transmissibility; }
-
-    T reflectivity = 0.0;
-    T transmissibility = 0.0;
+    virtual T GetRefractiveIndex() { return 1.0; }
 };
 
 template <std::floating_point T>
@@ -36,7 +32,10 @@ class BlinnPhongMaterial : public Material<T>
 {
    public:
     BlinnPhongMaterial(Color<T> base, T reflectivity, T transmissibility)
-        : Material<T>(reflectivity, transmissibility), base_color(base)
+        : Material<T>(),
+          base_color(base),
+          reflectivity(reflectivity),
+          transmissibility(transmissibility)
     {
     }
 
@@ -71,15 +70,22 @@ class BlinnPhongMaterial : public Material<T>
         return c;
     }
 
+    FresnelTerms<T> GetFresnelTerms(const Vec3<T> &incoming,
+                                    const Vec3<T> &normal) const override
+    {
+        return FresnelTerms<T>{reflectivity, transmissibility};
+    };
+
    private:
     Color<T> base_color;
+    T reflectivity, transmissibility;
 };
 
 template <std::floating_point T>
 class NormalMaterial : public Material<T>
 {
    public:
-    NormalMaterial<T>() : Material<T>(0.0, 0.0) {}
+    NormalMaterial<T>() : Material<T>() {}
 
     Color<T> Shade(const IntersectionRecord<T> &record,
                    const std::vector<Light<T>> & /*lights*/) override
@@ -94,7 +100,7 @@ template <std::floating_point T>
 class PositionMaterial : public Material<T>
 {
    public:
-    PositionMaterial<T>() : Material<T>(0.0, 0.0) {}
+    PositionMaterial<T>() : Material<T>() {}
 
     Color<T> Shade(const IntersectionRecord<T> &record,
                    const std::vector<Light<T>> & /*lights*/) override
@@ -103,5 +109,34 @@ class PositionMaterial : public Material<T>
         Color<T> c = {pos.x(), pos.y(), pos.z()};
         return c;
     }
+};
+
+template <std::floating_point T>
+class GlassMaterial : public Material<T>
+{
+   public:
+    GlassMaterial<T>(T refractive_index)
+        : Material<T>(), refractive_index(refractive_index)
+    {
+    }
+
+    Color<T> Shade(const IntersectionRecord<T> &record,
+                   const std::vector<Light<T>> & /*lights*/) override
+    {
+        return Color<T>();
+    }
+
+    FresnelTerms<T> GetFresnelTerms(const Vec3<T> &incoming,
+                                    const Vec3<T> &normal) const override
+    {
+        auto terms = fresnel(incoming, normal, refractive_index);
+        assert(ApproximateEqual(1.0, terms.refractive + terms.reflective));
+        return terms;
+    };
+
+    virtual T GetRefractiveIndex() override { return refractive_index; }
+
+   private:
+    T refractive_index;
 };
 }  // namespace raytracer

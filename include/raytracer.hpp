@@ -30,7 +30,8 @@ class Raytracer
     void ThreadTraceScene(int thread_index, int start_x, int start_y, int width,
                           int height, int full_width, int full_height);
 
-    Color<double> TraceRay(Ray<double> r, double min_distance);
+    Color<double> TraceRay(Ray<double> r, double min_distance,
+                           size_t rays_remaining);
 
     std::vector<uint8_t> pixel_data;
     // TODO variable amount of threads

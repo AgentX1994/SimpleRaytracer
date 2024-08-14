@@ -35,6 +35,10 @@ static std::shared_ptr<Shape> ReadShape(const nlohmann::json& shape_obj)
     {
         return std::make_shared<Plane>();
     }
+    else if (type == "disc")
+    {
+        return std::make_shared<Disc>();
+    }
     else
     {
         throw std::runtime_error("Unknown shape type!");
@@ -61,6 +65,11 @@ std::shared_ptr<Material<T>> ReadMaterial(const nlohmann::json& mat_obj)
     else if (type == "position")
     {
         return std::make_shared<PositionMaterial<T>>();
+    }
+    else if (type == "glass")
+    {
+        auto refractive_index = mat_obj.value("refractive_index", 1.5);
+        return std::make_shared<GlassMaterial<T>>(refractive_index);
     }
     else
     {
