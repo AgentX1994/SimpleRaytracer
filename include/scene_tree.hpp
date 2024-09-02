@@ -8,160 +8,121 @@
 
 namespace raytracer
 {
-template <std::floating_point T>
 class SceneNode
 {
    public:
-    SceneNode(Shape *shape, Material<T> *material)
+    SceneNode(Shape *shape, Material *material)
         : shape(shape), material(material)
     {
     }
 
-    bool Intersect(Ray<T> *r, T min_distance, T max_distance,
-                   IntersectionRecord<T> &record)
-    {
-        UpdateTransforms();
-        // Transform the ray into object space, then Intersect, then untransform
-        r->direction = cached_world_to_model.TransformVec(r->direction);
-        r->origin = cached_world_to_model.TransformPoint(r->origin);
-        auto res = shape->Intersect(r, min_distance, max_distance, record);
-        r->direction = cached_transform.TransformVec(r->direction);
-        r->origin = cached_transform.TransformPoint(r->origin);
-        if (res)
-        {
-            record.normal = cached_normal_matrix.TransformVec(record.normal);
-            record.normal.Normalize();
-            record.position = r->Evaluate(record.t);
-        }
-        return res;
-    }
+    bool Intersect(Ray *r, float min_distance, float max_distance,
+                   IntersectionRecord &record);
 
-    Color<T> Shade(const IntersectionRecord<T> &record,
-                   const std::vector<Light<T>> &lights) const
+    inline Color Shade(const IntersectionRecord &record,
+                       const std::vector<Light> &lights) const
     {
         return material->Shade(record, lights);
     }
 
-    FresnelTerms<T> GetFresnelTerms(const Vec3<T> &incoming,
-                                    const Vec3<T> &normal) const
+    inline FresnelTerms GetFresnelTerms(const Vec3f &incoming,
+                                        const Vec3f &normal) const
     {
         return material->GetFresnelTerms(incoming, normal);
     }
 
-    T GetRefractiveIndex() const { return material->GetRefractiveIndex(); }
-
-    void SetTranslation(T x, T y, T z)
+    inline float GetRefractiveIndex() const
     {
-        translation = Point3<T>(x, y, z);
+        return material->GetRefractiveIndex();
+    }
+
+    inline void SetTranslation(float x, float y, float z)
+    {
+        translation = Point3f(x, y, z);
         transform_dirty = true;
     }
 
-    void SetTranslation(Point3<T> t)
+    inline void SetTranslation(Point3f t)
     {
         translation = t;
         transform_dirty = true;
     }
 
-    void SetRotation(T x, T y, T z)
+    inline void SetRotation(float x, float y, float z)
     {
-        rotation = Vec3<T>(x, y, z);
+        rotation = Vec3f(x, y, z);
         transform_dirty = true;
     }
 
-    void SetRotation(Vec3<T> r)
+    inline void SetRotation(Vec3f r)
     {
         rotation = r;
         transform_dirty = true;
     }
 
-    void SetScale(T s)
+    inline void SetScale(float s)
     {
         scale = s;
         transform_dirty = true;
     }
 
-    void SetScale(T x, T y, T z)
+    inline void SetScale(float x, float y, float z)
     {
-        scale = Vec3<T>(x, y, z);
+        scale = Vec3f(x, y, z);
         transform_dirty = true;
     }
 
-    void SetScale(Vec3<T> s)
+    inline void SetScale(Vec3f s)
     {
         scale = s;
         transform_dirty = true;
     }
 
-    void UpdateTransforms()
-    {
-        if (transform_dirty)
-        {
-            auto trans_mat = Mat4<T>::Translation(translation);
-            auto rot_mat = Mat4<T>::Rotation(rotation);
-            auto scale_mat = Mat4<T>::Scale(scale);
-            cached_transform = trans_mat * rot_mat * scale_mat;
-            cached_world_to_model = cached_transform.Invert();
-            cached_normal_matrix = cached_world_to_model.Transpose();
-            transform_dirty = false;
-        }
-    }
+    void UpdateTransforms();
 
-    Shape *GetShape() { return shape; }
-    Material<T> *GetMaterial() { return material; }
+    inline Shape *GetShape() { return shape; }
+    inline Material *GetMaterial() { return material; }
 
    private:
     Shape *shape;
-    Material<T> *material;
+    Material *material;
 
-    Point3<T> translation;
-    Vec3<T> rotation;
-    Vec3<T> scale;
-    Mat4<T> cached_transform;
-    Mat4<T> cached_world_to_model;
-    Mat4<T> cached_normal_matrix;
+    Point3f translation;
+    Vec3f rotation;
+    Vec3f scale;
+    Mat4f cached_transform;
+    Mat4f cached_world_to_model;
+    Mat4f cached_normal_matrix;
     bool transform_dirty;
 };
 
-template <std::floating_point T>
 class SceneTree
 {
    public:
     SceneTree() {}
 
-    SceneNode<T> &AddNode(Shape *shape, Material<T> *material)
+    inline SceneNode &AddNode(Shape *shape, Material *material)
     {
         return nodes.emplace_back(shape, material);
     }
 
-    SceneNode<T> *GetNode(Shape *shape, Material<T> *material)
-    {
-        auto it = std::find(nodes.begin(), nodes.end(),
-                            [shape, material](auto &node) {
-                                return node.GetShape() == shape &&
-                                       node.GetMaterial() == material;
-                            });
-        if (it == nodes.end())
-        {
-            return nullptr;
-        }
-        else
-        {
-            return it.GetObject();
-        }
-    }
+    SceneNode *GetNode(Shape *shape, Material *material);
 
-    std::vector<SceneNode<T>>::iterator begin() { return nodes.begin(); }
+    inline std::vector<SceneNode>::iterator begin() { return nodes.begin(); }
 
-    std::vector<SceneNode<T>>::iterator end() { return nodes.end(); }
+    inline std::vector<SceneNode>::iterator end() { return nodes.end(); }
 
-    std::vector<SceneNode<T>>::const_iterator cbegin()
+    inline std::vector<SceneNode>::const_iterator cbegin()
     {
         return nodes.cbegin();
     }
 
-    std::vector<SceneNode<T>>::const_iterator cend() { return nodes.cend(); }
+    inline std::vector<SceneNode>::const_iterator cend()
+    {
+        return nodes.cend();
+    }
 
    private:
-    std::vector<SceneNode<T>> nodes;
+    std::vector<SceneNode> nodes;
 };
 }  // namespace raytracer

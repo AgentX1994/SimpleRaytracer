@@ -17,7 +17,7 @@ int main(int argc, char **argv)
     {
         file_name = argv[1];
     }
-    auto scene = Scene<double>::LoadFromJson(file_name);
+    auto scene = Scene::LoadFromJson(file_name);
     Raytracer rt(WIDTH, HEIGHT, scene);
     // Raytrace
     rt.StartTrace();
@@ -25,13 +25,13 @@ int main(int argc, char **argv)
     SdlWindow window(WIDTH, HEIGHT);
     auto tex = window.MakeTexture(WIDTH, HEIGHT);
 
-    double movement_speed = 0.25;
-    double rotation_speed = 0.1;
+    float movement_speed = 0.25;
+    float rotation_speed = 0.1;
 
     while (true)
     {
-        Vec3<double> movement;
-        Vec3<double> rotation;
+        Vec3f movement;
+        Vec3f rotation;
         auto event = window.PollEvent();
         if (event.type == SDL_QUIT)
         {
@@ -45,43 +45,43 @@ int main(int argc, char **argv)
             }
             else if (event.key.keysym.sym == SDLK_a)
             {
-                movement = movement + Vec3<double>(movement_speed, 0.0, 0.0);
+                movement = movement + Vec3f(movement_speed, 0.0, 0.0);
             }
             else if (event.key.keysym.sym == SDLK_d)
             {
-                movement = movement + Vec3<double>(-movement_speed, 0.0, 0.0);
+                movement = movement + Vec3f(-movement_speed, 0.0, 0.0);
             }
             else if (event.key.keysym.sym == SDLK_w)
             {
-                movement = movement + Vec3<double>(0.0, 0.0, movement_speed);
+                movement = movement + Vec3f(0.0, 0.0, movement_speed);
             }
             else if (event.key.keysym.sym == SDLK_s)
             {
-                movement = movement + Vec3<double>(0.0, 0.0, -movement_speed);
+                movement = movement + Vec3f(0.0, 0.0, -movement_speed);
             }
             else if (event.key.keysym.sym == SDLK_SPACE)
             {
-                movement = movement + Vec3<double>(0.0, movement_speed, 0.0);
+                movement = movement + Vec3f(0.0, movement_speed, 0.0);
             }
             else if (event.key.keysym.sym == SDLK_c)
             {
-                movement = movement + Vec3<double>(0.0, -movement_speed, 0.0);
+                movement = movement + Vec3f(0.0, -movement_speed, 0.0);
             }
             else if (event.key.keysym.sym == SDLK_q)
             {
-                rotation = rotation + Vec3<double>(0.0, rotation_speed, 0.0);
+                rotation = rotation + Vec3f(0.0, rotation_speed, 0.0);
             }
             else if (event.key.keysym.sym == SDLK_e)
             {
-                rotation = rotation + Vec3<double>(0.0, -rotation_speed, 0.0);
+                rotation = rotation + Vec3f(0.0, -rotation_speed, 0.0);
             }
             else if (event.key.keysym.sym == SDLK_r)
             {
-                rotation = rotation + Vec3<double>(rotation_speed, 0.0, 0.0);
+                rotation = rotation + Vec3f(rotation_speed, 0.0, 0.0);
             }
             else if (event.key.keysym.sym == SDLK_f)
             {
-                rotation = rotation + Vec3<double>(-rotation_speed, 0.0, 0.0);
+                rotation = rotation + Vec3f(-rotation_speed, 0.0, 0.0);
             }
         }
 

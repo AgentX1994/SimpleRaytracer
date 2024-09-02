@@ -7,12 +7,11 @@
 
 namespace raytracer
 {
-template <std::floating_point T>
 class Light
 {
    public:
-    Light(Point3<T> pos, T diffuse_power, Color<T> diffuse, T specular_power,
-          Color<T> specular)
+    Light(Point3f pos, float diffuse_power, Color diffuse, float specular_power,
+          Color specular)
         : position(pos),
           diffuse_power(diffuse_power),
           diffuse(diffuse),
@@ -21,15 +20,14 @@ class Light
     {
     }
 
-    Point3<T> position;
-    T diffuse_power;
-    Color<T> diffuse;
-    T specular_power;
-    Color<T> specular;
+    Point3f position;
+    float diffuse_power;
+    Color diffuse;
+    float specular_power;
+    Color specular;
 };
 
-template <std::floating_point T>
-std::ostream &operator<<(std::ostream &str, const Light<T> &l)
+inline std::ostream &operator<<(std::ostream &str, const Light &l)
 {
     str << "Light position=" << l.position
         << " diffuse power=" << l.diffuse_power << " diffuse=" << l.diffuse

@@ -14,7 +14,7 @@ static void TraceThreadFunction() {}
 
 namespace raytracer
 {
-Raytracer::Raytracer(int width, int height, Scene<double> &scene)
+Raytracer::Raytracer(int width, int height, Scene &scene)
     : width(width),
       height(height),
       scene(scene),
@@ -85,22 +85,22 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
             }
             // from
             // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-generating-camera-rays/generating-camera-rays
-            double pixel_x_ndc = ((double)dx + 0.5) / (double)full_width;
-            double pixel_y_ndc = ((double)dy + 0.5) / (double)full_height;
+            float pixel_x_ndc = ((float)dx + 0.5f) / (float)full_width;
+            float pixel_y_ndc = ((float)dy + 0.5f) / (float)full_height;
 
-            double pixel_screen_x = 2.0 * pixel_x_ndc - 1.0;
-            double pixel_screen_y = 2.0 * pixel_y_ndc - 1.0;
+            float pixel_screen_x = 2.0f * pixel_x_ndc - 1.0f;
+            float pixel_screen_y = 2.0f * pixel_y_ndc - 1.0f;
 
-            double aspect_ratio = (double)full_width / (double)full_height;
-            double fovx = 90.0;
-            double fovy = 90.0;
+            float aspect_ratio = (float)full_width / (float)full_height;
+            float fovx = 90.0f;
+            float fovy = 90.0f;
 
-            constexpr double DEGREES_TO_RADIANS = std::numbers::pi / 180.0;
-            double pixel_camera_x = pixel_screen_x * aspect_ratio *
-                                    std::tan(fovx / 2.0 * DEGREES_TO_RADIANS);
-            double pixel_camera_y =
-                pixel_screen_y * std::tan(fovy / 2.0 * DEGREES_TO_RADIANS);
-            Vec3 pixel_camera_space(pixel_camera_x, pixel_camera_y, -1.0);
+            constexpr float DEGREES_TO_RADIANS = std::numbers::pi / 180.0f;
+            float pixel_camera_x = pixel_screen_x * aspect_ratio *
+                                   std::tan(fovx / 2.0f * DEGREES_TO_RADIANS);
+            float pixel_camera_y =
+                pixel_screen_y * std::tan(fovy / 2.0f * DEGREES_TO_RADIANS);
+            Vec3f pixel_camera_space(pixel_camera_x, pixel_camera_y, -1.0f);
             auto pixel_world_space =
                 camera_transform.TransformPoint(pixel_camera_space);
 
@@ -109,7 +109,7 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
                     (pixel_world_space - scene.camera.GetPosition()).ToUnit());
 
             constexpr size_t MAX_RAYS_TO_TRACE = 10;
-            auto c = TraceRay(r, 0.0, MAX_RAYS_TO_TRACE);
+            auto c = TraceRay(r, 0.0f, MAX_RAYS_TO_TRACE);
 
             auto pixel_start_index =
                 4 * full_width * (full_height - dy) + 4 * dx;
@@ -125,17 +125,16 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
     thread_status[thread_index].store(true);
 }
 
-Color<double> Raytracer::TraceRay(Ray<double> r, double min_distance,
-                                  size_t rays_remaining)
+Color Raytracer::TraceRay(Ray r, float min_distance, size_t rays_remaining)
 {
     if (rays_remaining <= 0)
     {
-        return Color<double>();
+        return Color();
     }
-    IntersectionRecord<double> record;
+    IntersectionRecord record;
 
     // TODO find a better way to save the hit node
-    const SceneNode<double> *hit_node = nullptr;
+    const SceneNode *hit_node = nullptr;
 
     for (auto &n : scene.objects)
     {
@@ -145,35 +144,35 @@ Color<double> Raytracer::TraceRay(Ray<double> r, double min_distance,
         }
     }
 
-    constexpr double BIAS = 0.01;
+    constexpr float BIAS = 0.01f;
     if (hit_node != nullptr)
     {
         auto c = hit_node->Shade(record, scene.lights);
 
-        FresnelTerms<double> terms =
+        FresnelTerms terms =
             hit_node->GetFresnelTerms(record.ray->direction, record.normal);
         bool outside = Dot(record.ray->direction, record.normal) < 0;
-        Vec3<double> bias = BIAS * record.normal;
-        if (terms.reflective != 0.0)
+        Vec3f bias = BIAS * record.normal;
+        if (terms.reflective != 0.0f)
         {
             auto reflection_dir = Reflect(record.ray->direction, record.normal);
-            Vec3<double> new_origin =
+            Vec3f new_origin =
                 outside ? record.position + bias : record.position - bias;
-            auto reflection_ray = Ray<double>(new_origin, reflection_dir);
+            auto reflection_ray = Ray(new_origin, reflection_dir);
 
             c += terms.reflective *
-                 TraceRay(reflection_ray, 0.0, rays_remaining - 1);
+                 TraceRay(reflection_ray, 0.0f, rays_remaining - 1);
         }
-        if (terms.refractive != 0.0)
+        if (terms.refractive != 0.0f)
         {
             auto refraction_dir = Refract(record.ray->direction, record.normal,
                                           hit_node->GetRefractiveIndex());
-            Vec3<double> new_origin =
+            Vec3f new_origin =
                 outside ? record.position - bias : record.position + bias;
-            auto refraction_ray = Ray<double>(new_origin, refraction_dir);
+            auto refraction_ray = Ray(new_origin, refraction_dir);
 
             c += terms.refractive *
-                 TraceRay(refraction_ray, 0.0, rays_remaining - 1);
+                 TraceRay(refraction_ray, 0.0f, rays_remaining - 1);
         }
 
         return c;

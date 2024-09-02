@@ -12,7 +12,7 @@ namespace raytracer
 class Raytracer
 {
    public:
-    Raytracer(int width, int height, Scene<double> &scene);
+    Raytracer(int width, int height, Scene &scene);
     ~Raytracer();
 
     void StartTrace();
@@ -24,14 +24,13 @@ class Raytracer
    private:
     int width;
     int height;
-    Scene<double> &scene;
+    Scene &scene;
     bool running = false;
 
     void ThreadTraceScene(int thread_index, int start_x, int start_y, int width,
                           int height, int full_width, int full_height);
 
-    Color<double> TraceRay(Ray<double> r, double min_distance,
-                           size_t rays_remaining);
+    Color TraceRay(Ray r, float min_distance, size_t rays_remaining);
 
     std::vector<uint8_t> pixel_data;
     // TODO variable amount of threads

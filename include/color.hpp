@@ -8,27 +8,24 @@
 
 namespace raytracer
 {
-template <std::floating_point T>
 struct Color
 {
-    T r;
-    T g;
-    T b;
+    float r;
+    float g;
+    float b;
 
-    Color<T> SaturateColor()
+    inline Color SaturateColor()
     {
-        return Color<T>{Saturate(r), Saturate(g), Saturate(b)};
+        return Color{Saturate(r), Saturate(g), Saturate(b)};
     }
 };
 
-template <std::floating_point T>
-Color<T> operator+(Color<T> left, Color<T> right)
+inline Color operator+(Color left, Color right)
 {
-    return Color<T>{left.r + right.r, left.g + right.g, left.b + right.b};
+    return Color{left.r + right.r, left.g + right.g, left.b + right.b};
 }
 
-template <std::floating_point T>
-Color<T>& operator+=(Color<T>& left, Color<T> right)
+inline Color& operator+=(Color& left, Color right)
 {
     left.r += right.r;
     left.g += right.g;
@@ -36,32 +33,27 @@ Color<T>& operator+=(Color<T>& left, Color<T> right)
     return left;
 }
 
-template <std::floating_point T>
-Color<T> operator*(Color<T> left, Color<T> right)
+inline Color operator*(Color left, Color right)
 {
-    return Color<T>{left.r * right.r, left.g * right.g, left.b * right.b};
+    return Color{left.r * right.r, left.g * right.g, left.b * right.b};
 }
 
-template <std::floating_point T>
-Color<T> operator*(T left, Color<T> right)
+inline Color operator*(float left, Color right)
 {
-    return Color<T>{left * right.r, left * right.g, left * right.b};
+    return Color{left * right.r, left * right.g, left * right.b};
 }
 
-template <std::floating_point T>
-Color<T> operator*(Color<T> left, T right)
+inline Color operator*(Color left, float right)
 {
-    return Color<T>{left.r * right, left.g * right, left.b * right};
+    return Color{left.r * right, left.g * right, left.b * right};
 }
 
-template <std::floating_point T>
-Color<T> operator/(Color<T> left, T right)
+inline Color operator/(Color left, float right)
 {
-    return Color<T>{left.r / right, left.g / right, left.b / right};
+    return Color{left.r / right, left.g / right, left.b / right};
 }
 
-template <std::floating_point T>
-std::ostream& operator<<(std::ostream& str, Color<T> c)
+inline std::ostream& operator<<(std::ostream& str, Color c)
 {
     str << c.r << ", " << c.g << ", " << c.b;
     return str;

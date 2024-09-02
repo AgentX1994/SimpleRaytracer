@@ -4,7 +4,7 @@
 
 TEST(MathTests, SimpleQuadratic)
 {
-    double x0, x1;
+    float x0, x1;
     auto res = raytracer::SolveQuadratic(1.0, -1.0, -6.0, x0, x1);
     ASSERT_TRUE(res);
     ASSERT_FLOAT_EQ(x0, -2.0);
@@ -13,7 +13,7 @@ TEST(MathTests, SimpleQuadratic)
 
 TEST(MathTests, SingularQuadratic)
 {
-    double x0, x1;
+    float x0, x1;
     auto res = raytracer::SolveQuadratic(1.0, -6.0, 9.0, x0, x1);
     ASSERT_TRUE(res);
     ASSERT_FLOAT_EQ(x0, 3);
@@ -22,7 +22,7 @@ TEST(MathTests, SingularQuadratic)
 
 TEST(MathTests, UnsolvableQuadratic)
 {
-    double x0, x1;
+    float x0, x1;
     auto res = raytracer::SolveQuadratic(1.0, -2.0, 10.0, x0, x1);
     ASSERT_FALSE(res);
 }
@@ -30,7 +30,7 @@ TEST(MathTests, UnsolvableQuadratic)
 TEST(MathTests, Vec3)
 {
     {
-        raytracer::Vec3<double> v;
+        raytracer::Vec3f v;
         ASSERT_EQ(v.x(), 0.0);
         ASSERT_EQ(v.y(), 0.0);
         ASSERT_EQ(v.z(), 0.0);
@@ -39,7 +39,7 @@ TEST(MathTests, Vec3)
         ASSERT_FALSE(v.IsUnit());
     }
     {
-        raytracer::Vec3<double> v(1.0, 0.0, 0.0);
+        raytracer::Vec3f v(1.0, 0.0, 0.0);
         ASSERT_EQ(v.x(), 1.0);
         ASSERT_EQ(v.y(), 0.0);
         ASSERT_EQ(v.z(), 0.0);
@@ -48,7 +48,7 @@ TEST(MathTests, Vec3)
         ASSERT_TRUE(v.IsUnit());
     }
     {
-        raytracer::Vec3<double> v(1.0, 1.0, 1.0);
+        raytracer::Vec3f v(1.0, 1.0, 1.0);
         ASSERT_EQ(v.x(), 1.0);
         ASSERT_EQ(v.y(), 1.0);
         ASSERT_EQ(v.z(), 1.0);
@@ -57,8 +57,8 @@ TEST(MathTests, Vec3)
         ASSERT_FALSE(v.IsUnit());
     }
     {
-        raytracer::Vec3<double> v1(1.0, 2.0, 3.0);
-        raytracer::Vec3<double> v2(4.0, 5.0, 6.0);
+        raytracer::Vec3f v1(1.0, 2.0, 3.0);
+        raytracer::Vec3f v2(4.0, 5.0, 6.0);
         ASSERT_FLOAT_EQ(raytracer::Dot(v1, v2), 32.0);
         auto v_cross = raytracer::Cross(v1, v2);
         ASSERT_FLOAT_EQ(v_cross.x(), -3.0);

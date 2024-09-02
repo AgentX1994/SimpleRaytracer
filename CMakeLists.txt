@@ -6,6 +6,10 @@ project(raytracer
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_COLOR_DIAGNOSTICS ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 # 1. Look for a SDL2 package, 2. look for the SDL2 component and 3. fail if none can be found
 find_package(SDL2 REQUIRED CONFIG REQUIRED COMPONENTS SDL2)
@@ -18,7 +22,12 @@ find_package(nlohmann_json 3.2.0 REQUIRED)
 add_executable(${PROJECT_NAME}
     src/main.cpp
     src/sdl_window.cpp
-    src/raytracer.cpp)
+    src/raytracer.cpp
+    src/math.cpp
+    src/scene.cpp
+    src/material.cpp
+    src/camera.cpp
+    src/scene_tree.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 
@@ -32,6 +41,7 @@ find_package(GTest REQUIRED)
 
 add_executable(${PROJECT_NAME}_math_tests
     tests/math_tests.cpp
+    src/math.cpp
 )
 target_include_directories(${PROJECT_NAME}_math_tests PRIVATE include)
 target_link_libraries(${PROJECT_NAME}_math_tests PRIVATE GTest::gtest GTest::gtest_main)
