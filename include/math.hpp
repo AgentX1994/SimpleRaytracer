@@ -151,6 +151,12 @@ class Vec3f : public Vec3fBase
         float z = this->z() / right;
         return Vec3f(x, y, z);
     }
+
+    inline Vec3f &operator+=(const Vec3f right)
+    {
+        *this = *this + right;
+        return *this;
+    }
 };
 
 class Point3f : public Vec3fBase
@@ -214,6 +220,12 @@ class Point3f : public Vec3fBase
         float z = this->z() - right.z();
         return Point3f(x, y, z);
     }
+
+    inline Point3f &operator+=(const Vec3f right)
+    {
+        *this = *this + right;
+        return *this;
+    }
 };
 
 std::ostream &operator<<(std::ostream &str, const Vec3f &v);
@@ -266,6 +278,8 @@ inline float Dot(const Vec3f left, const Vec3f right)
     float zs = left.z() * right.z();
     return xs + ys + zs;
 }
+
+Vec3f AxisAngleToEuler(const Vec3f axis, float angle);
 
 struct FresnelTerms
 {

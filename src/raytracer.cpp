@@ -68,8 +68,9 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
                                  int width, int height, int full_width,
                                  int full_height)
 {
-    std::cout << "Tracing thread started, id = " << thread_index
-              << ", start_x = " << start_x << ", start_y = " << start_y << '\n';
+    // std::cout << "Tracing thread started, id = " << thread_index
+    //           << ", start_x = " << start_x << ", start_y = " << start_y <<
+    //           '\n';
     auto camera_transform = scene.camera.GetTransform();
     for (int dx = start_x; dx < start_x + width; ++dx)
     {
@@ -121,7 +122,7 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
             pixel_data[pixel_start_index + 3] = 255;
         }
     }
-    std::cout << "Tracing thread " << thread_index << " done\n";
+    // std::cout << "Tracing thread " << thread_index << " done\n";
     thread_status[thread_index].store(true);
 }
 

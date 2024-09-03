@@ -9,7 +9,11 @@ namespace raytracer
 class Camera
 {
    public:
-    Camera() : position(), up(0.0f, 1.0f, 0.0f), forward(0.0f, 0.0f, -1.0f) {}
+    Camera() : position(), up(0.0f, 1.0f, 0.0f), forward(0.0f, 0.0f, -1.0f)
+    {
+        UpdateTransform();
+    }
+
     Camera(Point3f position, Vec3f up, Vec3f forward)
         : position(position), up(up), forward(forward)
     {
@@ -36,11 +40,15 @@ class Camera
         UpdateTransform();
     }
 
+    inline Vec3f GetForward() const { return forward; }
+    inline Vec3f GetUp() const { return up; }
+    inline Vec3f GetRight() const { return Cross(up, forward); }
+
     inline void Move(Vec3f movement)
     {
         auto right = Cross(up, forward);
-        position = position + movement.x() * right + movement.y() * up +
-                   movement.z() * forward;
+        position +=
+            movement.x() * right + movement.y() * up + movement.z() * forward;
         UpdateTransform();
     }
 

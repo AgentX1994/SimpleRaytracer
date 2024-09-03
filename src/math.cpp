@@ -64,6 +64,44 @@ Point3f::Point3f(float x) : Vec3fBase(x) {}
 Point3f::Point3f(float x, float y, float z) : Vec3fBase(x, y, z) {}
 Point3f::Point3f(const Vec3f &p) : Point3f(p.x(), p.y(), p.z()) {}
 
+Vec3f AxisAngleToEuler(const Vec3f axis, float angle)
+{
+    // Adapted from
+    // https://www.euclideanspace.com/maths/geometry/rotations/conversions/angleToEuler/index.htm
+    auto x = axis.x();
+    auto y = axis.y();
+    auto z = axis.z();
+    auto s = std::sin(angle);
+    auto c = std::cos(angle);
+    auto t = 1.0f - c;
+
+    float y_len = x * y * t + z * s;
+    float heading = 0.0f;
+    float attitude = 0.0f;
+    float bank = 0.0f;
+    if (ApproximateEqual(y_len, 1.0f))
+    {  // north pole singularity detected
+        heading =
+            2.0f * atan2(x * std::sin(angle / 2.0f), std::cos(angle / 2.0f));
+        attitude = std::numbers::pi_v<float> / 2.0f;
+        bank = 0.0f;
+    }
+    else if (ApproximateEqual(y_len, -1.0f))
+    {  // south pole singularity detected
+        heading =
+            -2.0f * atan2(x * std::sin(angle / 2.0f), std::cos(angle / 2.0f));
+        attitude = -std::numbers::pi_v<float> / 2.0f;
+        bank = 0;
+    }
+    else
+    {
+        heading = std::atan2(y * s - x * z * t, 1.0f - (y * y + z * z) * t);
+        attitude = std::asin(x * y * t + z * s);
+        bank = std::atan2(x * s - y * z * t, 1.0f - (x * x + z * z) * t);
+    }
+    return Vec3f(bank, heading, attitude);
+}
+
 FresnelTerms fresnel(const Vec3f &incoming, const Vec3f &normal,
                      float refractive_index)
 {

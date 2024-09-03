@@ -25,8 +25,8 @@ int main(int argc, char **argv)
     SdlWindow window(WIDTH, HEIGHT);
     auto tex = window.MakeTexture(WIDTH, HEIGHT);
 
-    float movement_speed = 1.25;
-    float rotation_speed = 0.1;
+    float movement_speed = 1.25f;
+    float rotation_speed = 0.1f;
     bool speed_up = false;
 
     while (true)
@@ -46,43 +46,53 @@ int main(int argc, char **argv)
             }
             else if (event.key.keysym.sym == SDLK_a)
             {
-                movement = movement + Vec3f(movement_speed, 0.0, 0.0);
+                movement += Vec3f(movement_speed, 0.0f, 0.0f);
             }
             else if (event.key.keysym.sym == SDLK_d)
             {
-                movement = movement + Vec3f(-movement_speed, 0.0, 0.0);
+                movement += Vec3f(-movement_speed, 0.0f, 0.0f);
             }
             else if (event.key.keysym.sym == SDLK_w)
             {
-                movement = movement + Vec3f(0.0, 0.0, movement_speed);
+                movement += Vec3f(0.0f, 0.0f, movement_speed);
             }
             else if (event.key.keysym.sym == SDLK_s)
             {
-                movement = movement + Vec3f(0.0, 0.0, -movement_speed);
+                movement += Vec3f(0.0f, 0.0f, -movement_speed);
             }
             else if (event.key.keysym.sym == SDLK_SPACE)
             {
-                movement = movement + Vec3f(0.0, movement_speed, 0.0);
+                movement += Vec3f(0.0f, movement_speed, 0.0f);
             }
             else if (event.key.keysym.sym == SDLK_c)
             {
-                movement = movement + Vec3f(0.0, -movement_speed, 0.0);
+                movement += Vec3f(0.0f, -movement_speed, 0.0f);
             }
             else if (event.key.keysym.sym == SDLK_q)
             {
-                rotation = rotation + Vec3f(0.0, rotation_speed, 0.0);
+                rotation += Vec3f(0.0f, rotation_speed, 0.0f);
             }
             else if (event.key.keysym.sym == SDLK_e)
             {
-                rotation = rotation + Vec3f(0.0, -rotation_speed, 0.0);
+                rotation += Vec3f(0.0f, -rotation_speed, 0.0f);
             }
             else if (event.key.keysym.sym == SDLK_r)
             {
-                rotation = rotation + Vec3f(rotation_speed, 0.0, 0.0);
+                // This rotation should be about the camera's right axis
+                auto right = scene.camera.GetRight();
+                auto to_rotate = AxisAngleToEuler(right, -rotation_speed);
+                std::cout << "Rotating " << -rotation_speed << " radians about "
+                          << right << ": " << to_rotate << '\n';
+                rotation += to_rotate;
             }
             else if (event.key.keysym.sym == SDLK_f)
             {
-                rotation = rotation + Vec3f(-rotation_speed, 0.0, 0.0);
+                // This rotation should be about the camera's right axis
+                auto right = scene.camera.GetRight();
+                auto to_rotate = AxisAngleToEuler(right, rotation_speed);
+                std::cout << "Rotating " << rotation_speed << " radians about "
+                          << right << ": " << to_rotate << '\n';
+                rotation += to_rotate;
             }
             else if (event.key.keysym.sym == SDLK_y)
             {
@@ -99,7 +109,7 @@ int main(int argc, char **argv)
             }
         }
 
-        if ((movement.LengthSquared() > 0 || rotation.LengthSquared() > 0.0) &&
+        if ((movement.LengthSquared() > 0 || rotation.LengthSquared() > 0.0f) &&
             rt.IsTraceDone())
         {
             scene.camera.Move(movement);
