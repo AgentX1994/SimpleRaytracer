@@ -564,6 +564,61 @@ bool Disc::Intersect(Ray *ray, float min_distance, float max_distance,
     return false;
 }
 
+AxisAlignedBox::AxisAlignedBox(Point3f a, Point3f b)
+{
+    bounds[0] = Point3f(std::min(a.x(), b.x()), std::min(a.y(), b.y()),
+                        std::min(a.z(), b.z()));
+    bounds[1] = Point3f(std::max(a.x(), b.x()), std::max(a.y(), b.y()),
+                        std::max(a.z(), b.z()));
+}
+
+void AxisAlignedBox::AddPoint(Point3f p)
+{
+    std::cout << "adding point\n";
+    auto new_min = Point3f(std::min({bounds[0].x(), bounds[1].x(), p.x()}),
+                           std::min({bounds[0].y(), bounds[1].y(), p.y()}),
+                           std::min({bounds[0].z(), bounds[1].z(), p.z()}));
+    auto new_max = Point3f(std::max({bounds[0].x(), bounds[1].x(), p.x()}),
+                           std::max({bounds[0].y(), bounds[1].y(), p.y()}),
+                           std::max({bounds[0].z(), bounds[1].z(), p.z()}));
+    bounds[0] = new_min;
+    bounds[1] = new_max;
+}
+
+bool AxisAlignedBox::Intersect(Ray *ray, float min_distance, float max_distance,
+                               IntersectionRecord &record)
+{
+    // Adapted from
+    // https://www.scratchapixel.com/lessons/3d-basic-rendering/minimal-ray-tracer-rendering-simple-shapes/ray-box-intersection.html
+    float tmin, tmax, tymin, tymax, tzmin, tzmax;
+
+    tmin = (bounds[ray->signs[0]].x() - ray->origin.x()) *
+           ray->inverse_direction.x();
+    tmax = (bounds[1 - ray->signs[0]].x() - ray->origin.x()) *
+           ray->inverse_direction.x();
+    tymin = (bounds[ray->signs[1]].y() - ray->origin.y()) *
+            ray->inverse_direction.y();
+    tymax = (bounds[1 - ray->signs[1]].y() - ray->origin.y()) *
+            ray->inverse_direction.y();
+
+    if ((tmin > tymax) || (tymin > tmax)) return false;
+
+    if (tymin > tmin) tmin = tymin;
+    if (tymax < tmax) tmax = tymax;
+
+    tzmin = (bounds[ray->signs[2]].z() - ray->origin.z()) *
+            ray->inverse_direction.z();
+    tzmax = (bounds[1 - ray->signs[2]].z() - ray->origin.z()) *
+            ray->inverse_direction.z();
+
+    if ((tmin > tzmax) || (tzmin > tmax)) return false;
+
+    if (tzmin > tmin) tmin = tzmin;
+    if (tzmax < tmax) tmax = tzmax;
+
+    return true;
+}
+
 bool Triangle::Intersect(Ray *ray, float min_distance, float max_distance,
                          IntersectionRecord &record)
 {
@@ -614,5 +669,45 @@ bool Triangle::Intersect(Ray *ray, float min_distance, float max_distance,
     record.v = v;
 
     return true;
+}
+
+Mesh::Mesh() : triangles(), bounding_box() {}
+
+Mesh::Mesh(std::vector<Triangle> tris) : triangles(std::move(tris))
+{
+    std::cout << "Constructing Mesh with " << triangles.size()
+              << " triangles\n";
+    for (auto &tri : triangles)
+    {
+        bounding_box.AddPoint(tri.a);
+        bounding_box.AddPoint(tri.b);
+        bounding_box.AddPoint(tri.c);
+    }
+    std::cout << "Bounding box: "
+              << "\n\t" << bounding_box.bounds[0] << "\n\t"
+              << bounding_box.bounds[1] << '\n';
+}
+
+bool Mesh::Intersect(Ray *ray, float min_distance, float max_distance,
+                     IntersectionRecord &record)
+{
+    // Check against the bounding box first
+    IntersectionRecord temp = record;
+    if (!bounding_box.Intersect(ray, min_distance, max_distance, temp))
+    {
+        return false;
+    }
+
+    // Intersect the ray with all triangles in this mesh, return the closest
+    bool has_hit = false;
+    for (auto &t : triangles)
+    {
+        if (t.Intersect(ray, std::min(min_distance, record.t),
+                        std::max(record.t, max_distance), record))
+        {
+            has_hit = true;
+        }
+    }
+    return has_hit;
 }
 }  // namespace raytracer

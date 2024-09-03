@@ -255,6 +255,14 @@ inline Point3f operator*(float left, const Point3f right)
     return Point3f(x, y, z);
 }
 
+inline Vec3f operator/(float left, const Vec3f right)
+{
+    float x = left / right.x();
+    float y = left / right.y();
+    float z = left / right.z();
+    return Vec3f(x, y, z);
+}
+
 inline Vec3f Cross(const Vec3f left, const Vec3f right)
 {
     float x = left.y() * right.z() - left.z() * right.y();
@@ -352,12 +360,18 @@ class Ray
    public:
     Ray(Point3f origin, Vec3f direction) : origin(origin), direction(direction)
     {
+        inverse_direction = 1.0f / direction;
+        signs[0] = inverse_direction.x() < 0.0f;
+        signs[1] = inverse_direction.y() < 0.0f;
+        signs[2] = inverse_direction.z() < 0.0f;
     }
 
     inline Point3f Evaluate(float t) { return origin + t * direction; }
 
     Point3f origin;
     Vec3f direction;
+    Vec3f inverse_direction;
+    std::array<int, 3> signs;
 };
 
 std::ostream &operator<<(std::ostream &str, const Ray &ray);
@@ -392,7 +406,7 @@ class Sphere : public Shape
     Sphere() {}
 
     bool Intersect(Ray *ray, float min_distance, float max_distance,
-                   IntersectionRecord &record);
+                   IntersectionRecord &record) override;
 };
 
 class Plane : public Shape
@@ -401,7 +415,7 @@ class Plane : public Shape
     Plane() {}
 
     bool Intersect(Ray *ray, float min_distance, float max_distance,
-                   IntersectionRecord &record);
+                   IntersectionRecord &record) override;
 };
 
 class Disc : public Shape
@@ -410,7 +424,21 @@ class Disc : public Shape
     Disc() {}
 
     bool Intersect(Ray *ray, float min_distance, float max_distance,
-                   IntersectionRecord &record);
+                   IntersectionRecord &record) override;
+};
+
+class AxisAlignedBox : public Shape
+{
+   public:
+    AxisAlignedBox() = default;
+    AxisAlignedBox(Point3f a, Point3f b);
+
+    void AddPoint(Point3f p);
+
+    bool Intersect(Ray *ray, float min_distance, float max_distance,
+                   IntersectionRecord &record) override;
+
+    std::array<Point3f, 2> bounds;
 };
 
 class Triangle : public Shape
@@ -422,9 +450,22 @@ class Triangle : public Shape
     }
 
     bool Intersect(Ray *ray, float min_distance, float max_distance,
-                   IntersectionRecord &record);
+                   IntersectionRecord &record) override;
+
+    Point3f a, b, c;
+};
+
+class Mesh : public Shape
+{
+   public:
+    Mesh();
+    Mesh(std::vector<Triangle> tris);
+
+    bool Intersect(Ray *ray, float min_distance, float max_distance,
+                   IntersectionRecord &record) override;
 
    private:
-    Point3f a, b, c;
+    std::vector<Triangle> triangles;
+    AxisAlignedBox bounding_box;
 };
 }  // namespace raytracer

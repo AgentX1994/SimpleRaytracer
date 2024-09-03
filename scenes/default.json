@@ -59,6 +59,11 @@
             "a": [0.0, 0.0, 0.0],
             "b": [1.0, 0.0, 0.0],
             "c": [0.0, 1.0, 0.0]
+        },
+        {
+            "type": "mesh",
+            "name": "bunny_mesh",
+            "mesh": "../resources/models/bunny.obj"
         }
     ],
     "objects": [
@@ -103,6 +108,13 @@
             "rotation": [0.0, 0.0, 0.0],
             "scale": [1.0, 1.0, 1.0],
             "material": "uv_mat"
+        },
+        {
+            "shape": "bunny_mesh",
+            "position": [0.0, 2.0, -3.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [3.0, 3.0, 3.0],
+            "material": "mat1"
         }
     ],
     "lights": [

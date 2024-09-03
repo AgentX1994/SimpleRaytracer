@@ -1,8 +1,11 @@
 #include "scene.hpp"
 
+#include <filesystem>
+#include <format>
 #include <stdexcept>
 
 #include "math.hpp"
+#include "obj_loader.hpp"
 
 namespace raytracer
 {
@@ -44,6 +47,23 @@ std::shared_ptr<Shape> ReadShape(const nlohmann::json& shape_obj)
         return std::make_shared<Triangle>(Point3f(a[0], a[1], a[2]),
                                           Point3f(b[0], b[1], b[2]),
                                           Point3f(c[0], c[1], c[2]));
+    }
+    else if (type == "mesh")
+    {
+        auto file_path = shape_obj["mesh"];
+        if (!file_path.is_string())
+        {
+            throw std::runtime_error(
+                "Field \"mesh\" of mesh shape must be a string");
+        }
+        auto path = std::filesystem::path(file_path);
+        if (!std::filesystem::is_regular_file(path))
+        {
+            throw std::runtime_error(
+                std::format("Invalid path: {}", std::string(path)));
+        }
+
+        return load_obj_file(path);
     }
     else
     {

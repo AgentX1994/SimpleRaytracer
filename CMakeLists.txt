@@ -27,7 +27,8 @@ add_executable(${PROJECT_NAME}
     src/scene.cpp
     src/material.cpp
     src/camera.cpp
-    src/scene_tree.cpp)
+    src/scene_tree.cpp
+    src/obj_loader.cpp)
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 
