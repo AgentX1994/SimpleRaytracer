@@ -109,9 +109,12 @@ int main(int argc, char **argv)
             }
         }
 
-        if ((movement.LengthSquared() > 0 || rotation.LengthSquared() > 0.0f) &&
-            rt.IsTraceDone())
+        if ((movement.LengthSquared() > 0 || rotation.LengthSquared() > 0.0f))
         {
+            if (!rt.IsTraceDone())
+            {
+                rt.StopTrace();
+            }
             scene.camera.Move(movement);
             scene.camera.Rotate(rotation);
             rt.StartTrace();

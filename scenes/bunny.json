@@ -1,0 +1,50 @@
+{
+    "camera": {
+        "position": [0.0, 0.0, 0.0],
+        "forward": [0.3, 0.0, -1.0],
+        "up": [0.0, 1.0, 0.0]
+    },
+    "clear_color": [0.3, 0.5, 0.9],
+    "materials": [
+        {
+            "type": "blinnphong",
+            "name": "mat",
+            "base": [1.0, 0.25, 0.25],
+            "reflectivity": 0.5
+        }
+    ],
+    "shapes": [
+        {
+            "type": "mesh",
+            "name": "bunny_mesh",
+            "mesh": "../resources/models/bunny.obj"
+        }
+    ],
+    "objects": [
+        {
+            "shape": "bunny_mesh",
+            "position": [1.0, -1.0, -3.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [20.0, 20.0, 20.0],
+            "material": "mat"
+        }
+    ],
+    "lights": [
+        {
+            "type": "point",
+            "position": [3.0, 3.0, 3.0],
+            "diffuse_power": 30.0,
+            "diffuse": [1.0, 1.0, 1.0],
+            "specular_power": 10.0,
+            "specular": [1.0, 1.0, 1.0]
+        },
+        {
+            "type": "point",
+            "position": [-5.0, -1.0, -5.0],
+            "diffuse_power": 3.0,
+            "diffuse": [1.0, 1.0, 1.0],
+            "specular_power": 0.5,
+            "specular": [1.0, 1.0, 1.0]
+        }
+    ]
+}

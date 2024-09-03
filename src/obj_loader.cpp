@@ -157,9 +157,9 @@ std::shared_ptr<Mesh> load_obj_file(const std::filesystem::path &file_path)
         {
             std::string to_parse = line.substr(2);
             auto [v0_index, v1_index, v2_index] = parse_three_ints(to_parse);
-            Point3f v0 = vertices[v0_index];
-            Point3f v1 = vertices[v1_index];
-            Point3f v2 = vertices[v2_index];
+            Point3f v0 = vertices[v0_index - 1];
+            Point3f v1 = vertices[v1_index - 1];
+            Point3f v2 = vertices[v2_index - 1];
             Triangle tri(v0, v1, v2);
             tris.push_back(tri);
         }
