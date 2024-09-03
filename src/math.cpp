@@ -574,7 +574,6 @@ AxisAlignedBox::AxisAlignedBox(Point3f a, Point3f b)
 
 void AxisAlignedBox::AddPoint(Point3f p)
 {
-    std::cout << "adding point\n";
     auto new_min = Point3f(std::min({bounds[0].x(), bounds[1].x(), p.x()}),
                            std::min({bounds[0].y(), bounds[1].y(), p.y()}),
                            std::min({bounds[0].z(), bounds[1].z(), p.z()}));
@@ -675,17 +674,12 @@ Mesh::Mesh() : triangles(), bounding_box() {}
 
 Mesh::Mesh(std::vector<Triangle> tris) : triangles(std::move(tris))
 {
-    std::cout << "Constructing Mesh with " << triangles.size()
-              << " triangles\n";
     for (auto &tri : triangles)
     {
         bounding_box.AddPoint(tri.a);
         bounding_box.AddPoint(tri.b);
         bounding_box.AddPoint(tri.c);
     }
-    std::cout << "Bounding box: "
-              << "\n\t" << bounding_box.bounds[0] << "\n\t"
-              << bounding_box.bounds[1] << '\n';
 }
 
 bool Mesh::Intersect(Ray *ray, float min_distance, float max_distance,
@@ -702,8 +696,8 @@ bool Mesh::Intersect(Ray *ray, float min_distance, float max_distance,
     bool has_hit = false;
     for (auto &t : triangles)
     {
-        if (t.Intersect(ray, std::min(min_distance, record.t),
-                        std::max(record.t, max_distance), record))
+        if (t.Intersect(ray, min_distance, std::min(record.t, max_distance),
+                        record))
         {
             has_hit = true;
         }

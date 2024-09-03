@@ -23,9 +23,9 @@
     "objects": [
         {
             "shape": "bunny_mesh",
-            "position": [1.0, -1.0, -3.0],
+            "position": [3.0, -3.0, -4.0],
             "rotation": [0.0, 0.0, 0.0],
-            "scale": [20.0, 20.0, 20.0],
+            "scale": [40.0, 40.0, 40.0],
             "material": "mat"
         }
     ],

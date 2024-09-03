@@ -81,8 +81,6 @@ int main(int argc, char **argv)
                 // This rotation should be about the camera's right axis
                 auto right = scene.camera.GetRight();
                 auto to_rotate = AxisAngleToEuler(right, -rotation_speed);
-                std::cout << "Rotating " << -rotation_speed << " radians about "
-                          << right << ": " << to_rotate << '\n';
                 rotation += to_rotate;
             }
             else if (event.key.keysym.sym == SDLK_f)
@@ -90,8 +88,6 @@ int main(int argc, char **argv)
                 // This rotation should be about the camera's right axis
                 auto right = scene.camera.GetRight();
                 auto to_rotate = AxisAngleToEuler(right, rotation_speed);
-                std::cout << "Rotating " << rotation_speed << " radians about "
-                          << right << ": " << to_rotate << '\n';
                 rotation += to_rotate;
             }
             else if (event.key.keysym.sym == SDLK_y)
