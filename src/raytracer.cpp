@@ -95,7 +95,8 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
             float fovx = 90.0f;
             float fovy = 90.0f;
 
-            constexpr float DEGREES_TO_RADIANS = std::numbers::pi / 180.0f;
+            constexpr float DEGREES_TO_RADIANS =
+                std::numbers::pi_v<float> / 180.0f;
             float pixel_camera_x = pixel_screen_x * aspect_ratio *
                                    std::tan(fovx / 2.0f * DEGREES_TO_RADIANS);
             float pixel_camera_y =

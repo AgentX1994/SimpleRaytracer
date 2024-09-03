@@ -86,4 +86,10 @@ FresnelTerms GlassMaterial::GetFresnelTerms(const Vec3f &incoming,
     assert(ApproximateEqual(1.0f, terms.refractive + terms.reflective));
     return terms;
 }
+
+Color UVMaterial::Shade(const IntersectionRecord &record,
+                        const std::vector<Light> & /*lights*/)
+{
+    return Color{record.u, record.v, 0.0f};
+}
 }  // namespace raytracer

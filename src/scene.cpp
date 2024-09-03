@@ -1,5 +1,7 @@
 #include "scene.hpp"
 
+#include <stdexcept>
+
 #include "math.hpp"
 
 namespace raytracer
@@ -18,6 +20,30 @@ std::shared_ptr<Shape> ReadShape(const nlohmann::json& shape_obj)
     else if (type == "disc")
     {
         return std::make_shared<Disc>();
+    }
+    else if (type == "triangle")
+    {
+        auto a = shape_obj["a"];
+        auto b = shape_obj["b"];
+        auto c = shape_obj["c"];
+        if (!a.is_array() || a.size() != 3)
+        {
+            throw std::runtime_error(
+                "Field \"a\" of triangle shape should be an array of size 3");
+        }
+        if (!b.is_array() || b.size() != 3)
+        {
+            throw std::runtime_error(
+                "Field \"b\" of triangle shape should be an array of size 3");
+        }
+        if (!c.is_array() || c.size() != 3)
+        {
+            throw std::runtime_error(
+                "Field \"c\" of triangle shape should be an array of size 3");
+        }
+        return std::make_shared<Triangle>(Point3f(a[0], a[1], a[2]),
+                                          Point3f(b[0], b[1], b[2]),
+                                          Point3f(c[0], c[1], c[2]));
     }
     else
     {
@@ -49,6 +75,10 @@ std::shared_ptr<Material> ReadMaterial(const nlohmann::json& mat_obj)
     {
         auto refractive_index = mat_obj.value("refractive_index", 1.5f);
         return std::make_shared<GlassMaterial>(refractive_index);
+    }
+    else if (type == "uv")
+    {
+        return std::make_shared<UVMaterial>();
     }
     else
     {

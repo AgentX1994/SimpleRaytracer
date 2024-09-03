@@ -25,8 +25,9 @@ int main(int argc, char **argv)
     SdlWindow window(WIDTH, HEIGHT);
     auto tex = window.MakeTexture(WIDTH, HEIGHT);
 
-    float movement_speed = 0.25;
+    float movement_speed = 1.25;
     float rotation_speed = 0.1;
+    bool speed_up = false;
 
     while (true)
     {
@@ -82,6 +83,19 @@ int main(int argc, char **argv)
             else if (event.key.keysym.sym == SDLK_f)
             {
                 rotation = rotation + Vec3f(-rotation_speed, 0.0, 0.0);
+            }
+            else if (event.key.keysym.sym == SDLK_y)
+            {
+                if (speed_up)
+                {
+                    movement_speed /= 5.0f;
+                    speed_up = false;
+                }
+                else
+                {
+                    movement_speed *= 5.0f;
+                    speed_up = true;
+                }
             }
         }
 

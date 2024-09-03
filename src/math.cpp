@@ -4,6 +4,7 @@
 #include <cassert>
 #include <concepts>
 #include <iostream>
+#include <numbers>
 #include <ostream>
 #include <span>
 #include <stdexcept>
@@ -425,6 +426,11 @@ bool Sphere::Intersect(Ray *ray, float min_distance, float max_distance,
     record.position = position;
     record.normal = normal;
     record.shape = this;
+    // Adapted from https://gamedev.stackexchange.com/a/201460
+    // This is the Equirectangular projection
+    record.u = std::atan2(position.z(), -position.x()) /
+               (2.0f * std::numbers::pi_v<float>)+0.5f;
+    record.v = position.y() * 0.5f + 0.5f;
     return true;
 }
 
@@ -460,6 +466,14 @@ bool Plane::Intersect(Ray *ray, float min_distance, float max_distance,
         record.position = pos;
         record.normal = Vec3f(0.0f, 0.0f, 1.0f);
         record.shape = this;
+        // Compute UV coords
+        // Since this is on the x-y plane, we can just take the x coord of the
+        // position and y coordinate of the position as the u and v,
+        // respectively, and rescale to 0 to 1.
+        // each coord goes from -1 to 1, so
+        // multiply by 0.5 and add 0.5
+        record.u = pos.x() * 0.5f + 0.5f;
+        record.v = pos.y() * 0.5f + 0.5f;
         return true;
     }
 
@@ -498,9 +512,69 @@ bool Disc::Intersect(Ray *ray, float min_distance, float max_distance,
         record.position = pos;
         record.normal = Vec3f(0.0f, 0.0f, 1.0f);
         record.shape = this;
+        // Compute UV coords
+        // Since this is on the x-y plane, we can just take the x coord of the
+        // position and y coordinate of the position as the u and v,
+        // respectively, and rescale to 0 to 1.
+        // each coord goes from -1 to 1, so
+        // multiply by 0.5 and add 0.5
+        record.u = pos.x() * 0.5f + 0.5f;
+        record.v = pos.y() * 0.5f + 0.5f;
         return true;
     }
 
     return false;
+}
+
+bool Triangle::Intersect(Ray *ray, float min_distance, float max_distance,
+                         IntersectionRecord &record)
+{
+    // Triangle intersection algorithm from:
+    // https://www.scratchapixel.com/lessons/3d-basic-rendering/ray-tracing-rendering-a-triangle/moller-trumbore-ray-triangle-intersection.html
+    auto v0v1 = b - a;
+    auto v0v2 = c - a;
+    auto pvec = Cross(ray->direction, v0v2);
+    auto det = Dot(v0v1, pvec);
+
+    if (ApproximateEqual(det, 0.0f))
+    {
+        return false;
+    }
+
+    float invdet = 1.0f / det;
+
+    auto tvec = ray->origin - a;
+    auto u = Dot(tvec, pvec) * invdet;
+    if (u < 0.0f || u > 1.0f)
+    {
+        return false;
+    }
+
+    auto qvec = Cross(tvec, v0v1);
+    auto v = Dot(ray->direction, qvec) * invdet;
+    if (v < 0.0f || u + v > 1.0f)
+    {
+        return false;
+    }
+
+    // If we get here, we know we hit the triangle
+
+    auto t = Dot(v0v2, qvec) * invdet;
+
+    if (t < min_distance || t > max_distance)
+    {
+        return false;
+    }
+
+    record.t = t;
+    record.ray = ray;
+    record.position = ray->Evaluate(t);
+    // This may be equivalent to one of the other vectors here but I can't tell
+    record.normal = Cross(v0v1, v0v2).ToUnit();
+    record.shape = this;
+    record.u = u;
+    record.v = v;
+
+    return true;
 }
 }  // namespace raytracer

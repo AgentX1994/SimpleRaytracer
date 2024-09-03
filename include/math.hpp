@@ -357,6 +357,8 @@ struct IntersectionRecord
     Ray *ray = nullptr;
     Point3f position;
     Vec3f normal;
+    float u = 0.0f;
+    float v = 0.0f;
 };
 
 std::ostream &operator<<(std::ostream &str, const IntersectionRecord &record);
@@ -395,5 +397,20 @@ class Disc : public Shape
 
     bool Intersect(Ray *ray, float min_distance, float max_distance,
                    IntersectionRecord &record);
+};
+
+class Triangle : public Shape
+{
+   public:
+    Triangle(const Point3f a, const Point3f b, const Point3f c)
+        : a(a), b(b), c(c)
+    {
+    }
+
+    bool Intersect(Ray *ray, float min_distance, float max_distance,
+                   IntersectionRecord &record);
+
+   private:
+    Point3f a, b, c;
 };
 }  // namespace raytracer

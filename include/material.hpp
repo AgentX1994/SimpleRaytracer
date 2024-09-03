@@ -76,4 +76,13 @@ class GlassMaterial : public Material
    private:
     float refractive_index;
 };
+
+class UVMaterial : public Material
+{
+   public:
+    UVMaterial() {}
+
+    Color Shade(const IntersectionRecord &record,
+                const std::vector<Light> & /*lights*/) override;
+};
 }  // namespace raytracer

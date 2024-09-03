@@ -34,8 +34,11 @@
             "name": "disc_mat",
             "base": [0.5, 0.5, 0.5],
             "reflectivity": 0.9
+        },
+        {
+            "type": "uv",
+            "name": "uv_mat"
         }
-
     ],
     "shapes": [
         {
@@ -49,6 +52,13 @@
         {
             "type": "disc",
             "name": "disc"
+        },
+        {
+            "type": "triangle",
+            "name": "tri",
+            "a": [0.0, 0.0, 0.0],
+            "b": [1.0, 0.0, 0.0],
+            "c": [0.0, 1.0, 0.0]
         }
     ],
     "objects": [
@@ -86,6 +96,13 @@
             "rotation": [-0.5, 0.7853981633974483, -0.7853981633974483],
             "scale": [2.0, 2.0, 2.0],
             "material": "disc_mat"
+        },
+        {
+            "shape": "tri",
+            "position": [-2.0, 2.0, -3.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0],
+            "material": "uv_mat"
         }
     ],
     "lights": [
