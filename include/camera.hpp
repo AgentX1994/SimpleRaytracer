@@ -46,7 +46,7 @@ class Camera
 
     inline void Rotate(Vec3f rotation)
     {
-        forward = Mat4f::Rotation(rotation).TransformVec(forward);
+        forward = Mat4f::Rotation(rotation) * forward;
         forward.Normalize();
         UpdateTransform();
     }

@@ -8,14 +8,14 @@ bool SceneNode::Intersect(Ray *r, float min_distance, float max_distance,
 {
     UpdateTransforms();
     // Transform the ray into object space, then Intersect, then untransform
-    r->direction = cached_world_to_model.TransformVec(r->direction);
-    r->origin = cached_world_to_model.TransformPoint(r->origin);
+    r->direction = cached_world_to_model * r->direction;
+    r->origin = cached_world_to_model * r->origin;
     auto res = shape->Intersect(r, min_distance, max_distance, record);
-    r->direction = cached_transform.TransformVec(r->direction);
-    r->origin = cached_transform.TransformPoint(r->origin);
+    r->direction = cached_transform * r->direction;
+    r->origin = cached_transform * r->origin;
     if (res)
     {
-        record.normal = cached_normal_matrix.TransformVec(record.normal);
+        record.normal = cached_normal_matrix * record.normal;
         record.normal.Normalize();
         record.position = r->Evaluate(record.t);
     }

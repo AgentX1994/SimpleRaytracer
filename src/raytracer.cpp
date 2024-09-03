@@ -100,9 +100,8 @@ void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
                                    std::tan(fovx / 2.0f * DEGREES_TO_RADIANS);
             float pixel_camera_y =
                 pixel_screen_y * std::tan(fovy / 2.0f * DEGREES_TO_RADIANS);
-            Vec3f pixel_camera_space(pixel_camera_x, pixel_camera_y, -1.0f);
-            auto pixel_world_space =
-                camera_transform.TransformPoint(pixel_camera_space);
+            Point3f pixel_camera_space(pixel_camera_x, pixel_camera_y, -1.0f);
+            auto pixel_world_space = camera_transform * pixel_camera_space;
 
             auto r =
                 Ray(scene.camera.GetPosition(),
@@ -156,7 +155,7 @@ Color Raytracer::TraceRay(Ray r, float min_distance, size_t rays_remaining)
         if (terms.reflective != 0.0f)
         {
             auto reflection_dir = Reflect(record.ray->direction, record.normal);
-            Vec3f new_origin =
+            Point3f new_origin =
                 outside ? record.position + bias : record.position - bias;
             auto reflection_ray = Ray(new_origin, reflection_dir);
 
@@ -167,7 +166,7 @@ Color Raytracer::TraceRay(Ray r, float min_distance, size_t rays_remaining)
         {
             auto refraction_dir = Refract(record.ray->direction, record.normal,
                                           hit_node->GetRefractiveIndex());
-            Vec3f new_origin =
+            Point3f new_origin =
                 outside ? record.position - bias : record.position + bias;
             auto refraction_ray = Ray(new_origin, refraction_dir);
 

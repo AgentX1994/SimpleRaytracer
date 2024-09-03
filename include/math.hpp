@@ -22,18 +22,22 @@ inline float Clamp(float n, float min, float max)
 
 inline float Saturate(float n) { return Clamp(n, 0.0f, 1.0f); }
 
+class Vec3fBase;
 class Vec3f;
+class Point3f;
 inline Vec3f Cross(const Vec3f left, const Vec3f right);
+inline float Dot(const Vec3fBase left, const Vec3fBase right);
 inline float Dot(const Vec3f left, const Vec3f right);
+inline Vec3fBase operator*(float left, const Vec3fBase right);
 inline Vec3f operator*(float left, const Vec3f right);
+inline Point3f operator*(float left, const Point3f right);
 
-class Vec3f
+class Vec3fBase
 {
    public:
-    Vec3f();
-    Vec3f(float x);
-
-    Vec3f(float x, float y, float z);
+    Vec3fBase();
+    explicit Vec3fBase(float x);
+    Vec3fBase(float x, float y, float z);
 
     inline float x() const { return vec[0]; }
     inline float y() const { return vec[1]; }
@@ -42,6 +46,55 @@ class Vec3f
     inline float LengthSquared() const { return Dot(*this, *this); }
 
     inline float Length() const { return std::sqrt(LengthSquared()); }
+
+    inline Vec3fBase AbsoluteValue() const
+    {
+        return Vec3fBase(std::abs(x()), std::abs(y()), std::abs(z()));
+    }
+
+    inline Vec3fBase operator+(const Vec3fBase right) const
+    {
+        float x = this->x() + right.x();
+        float y = this->y() + right.y();
+        float z = this->z() + right.z();
+        return Vec3fBase(x, y, z);
+    }
+
+    inline Vec3fBase operator-(const Vec3fBase right) const
+    {
+        float x = this->x() - right.x();
+        float y = this->y() - right.y();
+        float z = this->z() - right.z();
+        return Vec3fBase(x, y, z);
+    }
+
+    inline Vec3fBase operator*(float right) const
+    {
+        float x = this->x() * right;
+        float y = this->y() * right;
+        float z = this->z() * right;
+        return Vec3fBase(x, y, z);
+    }
+
+    inline Vec3fBase operator/(float right) const
+    {
+        float x = this->x() / right;
+        float y = this->y() / right;
+        float z = this->z() / right;
+        return Vec3fBase(x, y, z);
+    }
+
+   protected:
+    std::array<float, 3> vec;
+};
+
+class Vec3f : public Vec3fBase
+{
+   public:
+    Vec3f();
+    explicit Vec3f(float x);
+    Vec3f(float x, float y, float z);
+    explicit Vec3f(const Point3f &p);
 
     inline bool IsUnit() const { return Length() == 1.0f; }
 
@@ -63,10 +116,11 @@ class Vec3f
 
     inline Vec3f AbsoluteValue() const
     {
-        return Vec3f(std::abs(x()), std::abs(y()), std::abs(z()));
+        auto ret = Vec3fBase::AbsoluteValue();
+        return Vec3f(ret.x(), ret.y(), ret.z());
     }
 
-    inline Vec3f operator+(Vec3f right) const
+    inline Vec3f operator+(const Vec3f right) const
     {
         float x = this->x() + right.x();
         float y = this->y() + right.y();
@@ -74,7 +128,7 @@ class Vec3f
         return Vec3f(x, y, z);
     }
 
-    inline Vec3f operator-(Vec3f right) const
+    inline Vec3f operator-(const Vec3f right) const
     {
         float x = this->x() - right.x();
         float y = this->y() - right.y();
@@ -97,12 +151,81 @@ class Vec3f
         float z = this->z() / right;
         return Vec3f(x, y, z);
     }
+};
 
-   private:
-    std::array<float, 3> vec;
+class Point3f : public Vec3fBase
+{
+   public:
+    Point3f();
+    explicit Point3f(float x);
+    Point3f(float x, float y, float z);
+    explicit Point3f(const Vec3f &v);
+
+    inline Point3f AbsoluteValue() const
+    {
+        auto ret = Vec3fBase::AbsoluteValue();
+        return Point3f(ret.x(), ret.y(), ret.z());
+    }
+
+    inline Point3f operator+(const Point3f right) const
+    {
+        float x = this->x() + right.x();
+        float y = this->y() + right.y();
+        float z = this->z() + right.z();
+        return Point3f(x, y, z);
+    }
+
+    inline Vec3f operator-(const Point3f right) const
+    {
+        float x = this->x() - right.x();
+        float y = this->y() - right.y();
+        float z = this->z() - right.z();
+        return Vec3f(x, y, z);
+    }
+
+    inline Point3f operator*(float right) const
+    {
+        float x = this->x() * right;
+        float y = this->y() * right;
+        float z = this->z() * right;
+        return Point3f(x, y, z);
+    }
+
+    inline Point3f operator/(float right) const
+    {
+        float x = this->x() / right;
+        float y = this->y() / right;
+        float z = this->z() / right;
+        return Point3f(x, y, z);
+    }
+
+    inline Point3f operator+(const Vec3f right) const
+    {
+        float x = this->x() + right.x();
+        float y = this->y() + right.y();
+        float z = this->z() + right.z();
+        return Point3f(x, y, z);
+    }
+
+    inline Point3f operator-(const Vec3f right) const
+    {
+        float x = this->x() - right.x();
+        float y = this->y() - right.y();
+        float z = this->z() - right.z();
+        return Point3f(x, y, z);
+    }
 };
 
 std::ostream &operator<<(std::ostream &str, const Vec3f &v);
+std::ostream &operator<<(std::ostream &str, const Point3f &v);
+
+inline Vec3fBase operator*(float left, const Vec3fBase right)
+{
+    float x = left * right.x();
+    float y = left * right.y();
+    float z = left * right.z();
+    return Vec3fBase(x, y, z);
+}
 
 inline Vec3f operator*(float left, const Vec3f right)
 {
@@ -110,6 +233,14 @@ inline Vec3f operator*(float left, const Vec3f right)
     float y = left * right.y();
     float z = left * right.z();
     return Vec3f(x, y, z);
+}
+
+inline Point3f operator*(float left, const Point3f right)
+{
+    float x = left * right.x();
+    float y = left * right.y();
+    float z = left * right.z();
+    return Point3f(x, y, z);
 }
 
 inline Vec3f Cross(const Vec3f left, const Vec3f right)
@@ -120,7 +251,7 @@ inline Vec3f Cross(const Vec3f left, const Vec3f right)
     return Vec3f(x, y, z);
 }
 
-inline float Dot(const Vec3f left, const Vec3f right)
+inline float Dot(const Vec3fBase left, const Vec3fBase right)
 {
     float xs = left.x() * right.x();
     float ys = left.y() * right.y();
@@ -128,7 +259,13 @@ inline float Dot(const Vec3f left, const Vec3f right)
     return xs + ys + zs;
 }
 
-using Point3f = Vec3f;
+inline float Dot(const Vec3f left, const Vec3f right)
+{
+    float xs = left.x() * right.x();
+    float ys = left.y() * right.y();
+    float zs = left.z() * right.z();
+    return xs + ys + zs;
+}
 
 struct FresnelTerms
 {
@@ -183,11 +320,8 @@ class Mat4f
                      elements[3], elements[7], elements[11], elements[15]);
     }
 
-    // Currently, Vec3 and Point3 are just aliases for the same type, so
-    // we cannot use operator overloads with them without causing ambiquity
-    // TODO: fix this
-    Vec3f TransformVec(Vec3f v) const;
-    Point3f TransformPoint(Point3f p) const;
+    Vec3f operator*(const Vec3f v) const;
+    Point3f operator*(const Point3f v) const;
 
    private:
     static bool InternalInvertMatrix(const float m[16], float invOut[16]);

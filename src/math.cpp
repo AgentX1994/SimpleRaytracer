@@ -42,15 +42,26 @@ bool SolveQuadratic(float a, float b, float c, float &x0, float &x1)
     return true;
 }
 
-Vec3f::Vec3f() : vec({0.0f}) {}
-Vec3f::Vec3f(float x) : Vec3f(x, x, x) {}
+Vec3fBase::Vec3fBase() : vec({0.0f}) {}
 
-Vec3f::Vec3f(float x, float y, float z) : Vec3f()
+Vec3fBase::Vec3fBase(float x) : Vec3fBase(x, x, x) {}
+
+Vec3fBase::Vec3fBase(float x, float y, float z) : Vec3fBase()
 {
     vec[0] = x;
     vec[1] = y;
     vec[2] = z;
 }
+
+Vec3f::Vec3f() : Vec3fBase() {}
+Vec3f::Vec3f(float x) : Vec3fBase(x) {}
+Vec3f::Vec3f(float x, float y, float z) : Vec3fBase(x, y, z) {}
+Vec3f::Vec3f(const Point3f &p) : Vec3f(p.x(), p.y(), p.z()) {}
+
+Point3f::Point3f() : Vec3fBase() {}
+Point3f::Point3f(float x) : Vec3fBase(x) {}
+Point3f::Point3f(float x, float y, float z) : Vec3fBase(x, y, z) {}
+Point3f::Point3f(const Vec3f &p) : Point3f(p.x(), p.y(), p.z()) {}
 
 FresnelTerms fresnel(const Vec3f &incoming, const Vec3f &normal,
                      float refractive_index)
@@ -113,6 +124,12 @@ Vec3f Refract(const Vec3f &incoming, const Vec3f &normal,
 std::ostream &operator<<(std::ostream &str, const Vec3f &v)
 {
     str << '(' << v.x() << ',' << v.y() << ',' << v.z() << ')';
+    return str;
+}
+
+std::ostream &operator<<(std::ostream &str, const Point3f &p)
+{
+    str << '(' << p.x() << ',' << p.y() << ',' << p.z() << ')';
     return str;
 }
 
@@ -194,10 +211,7 @@ Mat4f Mat4f::Invert() const
     return out;
 }
 
-// Currently, Vec3 and Point3 are just aliases for the same type, so
-// we cannot use operator overloads with them without causing ambiquity
-// TODO: fix this
-Vec3f Mat4f::TransformVec(Vec3f v) const
+Vec3f Mat4f::operator*(const Vec3f v) const
 {
     auto x = elements[0] * v.x() + elements[1] * v.y() + elements[2] * v.z();
     auto y = elements[4] * v.x() + elements[5] * v.y() + elements[6] * v.z();
@@ -205,7 +219,7 @@ Vec3f Mat4f::TransformVec(Vec3f v) const
     return Vec3f(x, y, z);
 }
 
-Point3f Mat4f::TransformPoint(Point3f p) const
+Point3f Mat4f::operator*(const Point3f p) const
 {
     auto x = elements[0] * p.x() + elements[1] * p.y() + elements[2] * p.z() +
              elements[3];
@@ -397,7 +411,7 @@ bool Sphere::Intersect(Ray *ray, float min_distance, float max_distance,
 
     // Calculate hit location and normal at that location
     Point3f position = ray->origin + t0 * ray->direction;
-    Vec3f normal = position.ToUnit();
+    Vec3f normal = Vec3f(position).ToUnit();
 
 #ifndef NDEBUG
     {

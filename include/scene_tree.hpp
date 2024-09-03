@@ -62,7 +62,7 @@ class SceneNode
 
     inline void SetScale(float s)
     {
-        scale = s;
+        scale = Vec3f(s);
         transform_dirty = true;
     }
 
