@@ -64,6 +64,22 @@ void Raytracer::StopTrace()
 
 const std::vector<uint8_t> &Raytracer::GetPixels() { return pixel_data; }
 
+bool Raytracer::CheckIntersection(Point3f origin, Vec3f direction) const
+{
+    Ray r(origin, direction);
+    IntersectionRecord record;
+
+    for (auto &n : scene.objects)
+    {
+        if (n.Intersect(&r, BIAS, record.t, record))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Raytracer::ThreadTraceScene(int thread_index, int start_x, int start_y,
                                  int width, int height, int full_width,
                                  int full_height)
@@ -145,10 +161,9 @@ Color Raytracer::TraceRay(Ray r, float min_distance, size_t rays_remaining)
         }
     }
 
-    constexpr float BIAS = 0.01f;
     if (hit_node != nullptr)
     {
-        auto c = hit_node->Shade(record, scene.lights);
+        auto c = hit_node->Shade(record, scene.lights, this);
 
         FresnelTerms terms =
             hit_node->GetFresnelTerms(record.ray->direction, record.normal);

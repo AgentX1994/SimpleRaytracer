@@ -20,9 +20,10 @@ class SceneNode
                    IntersectionRecord &record);
 
     inline Color Shade(const IntersectionRecord &record,
-                       const std::vector<Light> &lights) const
+                       const std::vector<Light> &lights,
+                       const Raytracer *raytracer) const
     {
-        return material->Shade(record, lights);
+        return material->Shade(record, lights, raytracer);
     }
 
     inline FresnelTerms GetFresnelTerms(const Vec3f &incoming,

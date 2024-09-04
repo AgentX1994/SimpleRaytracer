@@ -8,6 +8,8 @@
 
 namespace raytracer
 {
+class Raytracer;
+
 class Material
 {
    public:
@@ -15,7 +17,8 @@ class Material
     virtual ~Material() = default;
 
     virtual Color Shade(const IntersectionRecord &record,
-                        const std::vector<Light> &lights) = 0;
+                        const std::vector<Light> &lights,
+                        const Raytracer *raytracer) = 0;
 
     virtual FresnelTerms GetFresnelTerms(const Vec3f &incoming,
                                          const Vec3f &normal) const
@@ -32,7 +35,8 @@ class BlinnPhongMaterial : public Material
     BlinnPhongMaterial(Color base, float reflectivity, float transmissibility);
 
     Color Shade(const IntersectionRecord &record,
-                const std::vector<Light> &lights) override;
+                const std::vector<Light> &lights,
+                const Raytracer *raytracer) override;
 
     FresnelTerms GetFresnelTerms(const Vec3f &incoming,
                                  const Vec3f &normal) const override;
@@ -48,7 +52,8 @@ class NormalMaterial : public Material
     NormalMaterial() : Material() {}
 
     Color Shade(const IntersectionRecord &record,
-                const std::vector<Light> & /*lights*/) override;
+                const std::vector<Light> & /*lights*/,
+                const Raytracer * /*raytracer*/) override;
 };
 
 class PositionMaterial : public Material
@@ -57,7 +62,8 @@ class PositionMaterial : public Material
     PositionMaterial() : Material() {}
 
     Color Shade(const IntersectionRecord &record,
-                const std::vector<Light> & /*lights*/) override;
+                const std::vector<Light> & /*lights*/,
+                const Raytracer * /*raytracer*/) override;
 };
 
 class GlassMaterial : public Material
@@ -66,7 +72,8 @@ class GlassMaterial : public Material
     GlassMaterial(float refractive_index);
 
     Color Shade(const IntersectionRecord &record,
-                const std::vector<Light> & /*lights*/) override;
+                const std::vector<Light> & /*lights*/,
+                const Raytracer * /*raytracer*/) override;
 
     FresnelTerms GetFresnelTerms(const Vec3f &incoming,
                                  const Vec3f &normal) const override;
@@ -83,6 +90,7 @@ class UVMaterial : public Material
     UVMaterial() {}
 
     Color Shade(const IntersectionRecord &record,
-                const std::vector<Light> & /*lights*/) override;
+                const std::vector<Light> & /*lights*/,
+                const Raytracer * /*raytracer*/) override;
 };
 }  // namespace raytracer

@@ -21,7 +21,11 @@ class Raytracer
 
     const std::vector<uint8_t> &GetPixels();
 
+    bool CheckIntersection(Point3f origin, Vec3f direction) const;
+
    private:
+    constexpr static float BIAS = 0.01f;
+
     int width;
     int height;
     Scene &scene;

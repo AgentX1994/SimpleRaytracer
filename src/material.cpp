@@ -3,6 +3,7 @@
 #include "color.hpp"
 #include "light.hpp"
 #include "math.hpp"
+#include "raytracer.hpp"
 
 namespace raytracer
 {
@@ -16,16 +17,20 @@ BlinnPhongMaterial::BlinnPhongMaterial(Color base, float reflectivity,
 }
 
 Color BlinnPhongMaterial::Shade(const IntersectionRecord &record,
-                                const std::vector<Light> &lights)
+                                const std::vector<Light> &lights,
+                                const Raytracer *raytracer)
 {
     // Init to ambient light
     Color c = {0.1f, 0.1f, 0.1f};
     Vec3f view_dir = record.ray->direction.Reverse();
     for (auto light : lights)
     {
-        // std::cout << "Calculating Shading for hit record " << record << "
-        // and light " << l << '\n';
         Vec3f light_dir = light.position - record.position;
+        if (raytracer != nullptr &&
+            raytracer->CheckIntersection(record.position, light_dir))
+        {
+            continue;
+        }
         float distance_squared = light_dir.LengthSquared();
         light_dir.Normalize();
 
@@ -53,7 +58,8 @@ FresnelTerms BlinnPhongMaterial::GetFresnelTerms(const Vec3f &incoming,
 };
 
 Color NormalMaterial::Shade(const IntersectionRecord &record,
-                            const std::vector<Light> & /*lights*/)
+                            const std::vector<Light> & /*lights*/,
+                            const Raytracer * /*raytracer*/)
 {
     Vec3f normal = 0.5f * record.normal + Vec3f(0.5f, 0.5f, 0.5f);
     Color c = {normal.x(), normal.y(), normal.z()};
@@ -61,7 +67,8 @@ Color NormalMaterial::Shade(const IntersectionRecord &record,
 }
 
 Color PositionMaterial::Shade(const IntersectionRecord &record,
-                              const std::vector<Light> & /*lights*/)
+                              const std::vector<Light> & /*lights*/,
+                              const Raytracer * /*raytracer*/)
 {
     Point3f pos = 5.0f * record.position.AbsoluteValue();
     Color c = {pos.x(), pos.y(), pos.z()};
@@ -74,7 +81,8 @@ GlassMaterial::GlassMaterial(float refractive_index)
 }
 
 Color GlassMaterial::Shade(const IntersectionRecord &record,
-                           const std::vector<Light> & /*lights*/)
+                           const std::vector<Light> & /*lights*/,
+                           const Raytracer * /*raytracer*/)
 {
     return Color();
 }
@@ -88,7 +96,8 @@ FresnelTerms GlassMaterial::GetFresnelTerms(const Vec3f &incoming,
 }
 
 Color UVMaterial::Shade(const IntersectionRecord &record,
-                        const std::vector<Light> & /*lights*/)
+                        const std::vector<Light> & /*lights*/,
+                        const Raytracer * /*raytracer*/)
 {
     return Color{record.u, record.v, 0.0f};
 }
