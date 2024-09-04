@@ -650,7 +650,6 @@ bool Triangle::Intersect(Ray *ray, float min_distance, float max_distance,
     }
 
     // If we get here, we know we hit the triangle
-
     auto t = Dot(v0v2, qvec) * invdet;
 
     if (t < min_distance || t > max_distance)
@@ -661,13 +660,30 @@ bool Triangle::Intersect(Ray *ray, float min_distance, float max_distance,
     record.t = t;
     record.ray = ray;
     record.position = ray->Evaluate(t);
-    // This may be equivalent to one of the other vectors here but I can't tell
-    record.normal = Cross(v0v1, v0v2).ToUnit();
+    if (an.IsZero() || bn.IsZero() || cn.IsZero())
+    {
+        // This may be equivalent to one of the other vectors here but I can't
+        // tell
+        record.normal = Cross(v0v1, v0v2).ToUnit();
+    }
+    else
+    {
+        auto w = 1.0f - u - v;
+        record.normal = w * an + u * bn + v * cn;
+        record.normal.Normalize();
+    }
     record.shape = this;
     record.u = u;
     record.v = v;
 
     return true;
+}
+
+std::ostream &operator<<(std::ostream &ostr, const Triangle &tri)
+{
+    ostr << "Triangle @ " << tri.c << ", " << tri.b << ", " << tri.c
+         << ", with normals: " << tri.an << ", " << tri.bn << ", " << tri.cn;
+    return ostr;
 }
 
 Mesh::Mesh() : triangles(), bounding_box() {}

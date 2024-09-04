@@ -120,6 +120,11 @@ class Vec3f : public Vec3fBase
         return Vec3f(ret.x(), ret.y(), ret.z());
     }
 
+    inline bool IsZero() const
+    {
+        return x() == 0.0f && y() == 0.0f && z() == 0.0f;
+    }
+
     inline Vec3f operator+(const Vec3f right) const
     {
         float x = this->x() + right.x();
@@ -448,12 +453,20 @@ class Triangle : public Shape
         : a(a), b(b), c(c)
     {
     }
+    Triangle(const Point3f a, const Point3f b, const Point3f c, const Vec3f an,
+             const Vec3f bn, const Vec3f cn)
+        : a(a), b(b), c(c), an(an), bn(bn), cn(cn)
+    {
+    }
 
     bool Intersect(Ray *ray, float min_distance, float max_distance,
                    IntersectionRecord &record) override;
 
     Point3f a, b, c;
+    Vec3f an, bn, cn;  // normals
 };
+
+std::ostream &operator<<(std::ostream &ostr, const Triangle &tri);
 
 class Mesh : public Shape
 {

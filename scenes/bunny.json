@@ -17,7 +17,7 @@
         {
             "type": "mesh",
             "name": "bunny_mesh",
-            "mesh": "../resources/models/bunny.obj"
+            "mesh": "../resources/models/bunny_with_normals.obj"
         }
     ],
     "objects": [
@@ -25,7 +25,7 @@
             "shape": "bunny_mesh",
             "position": [3.0, -3.0, -4.0],
             "rotation": [0.0, 0.0, 0.0],
-            "scale": [40.0, 40.0, 40.0],
+            "scale": [5.0, 5.0, 5.0],
             "material": "mat"
         }
     ],

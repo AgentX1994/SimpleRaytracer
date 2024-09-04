@@ -1,10 +1,11 @@
 #include "obj_loader.hpp"
 
 #include <algorithm>
-#include <charconv>
+#include <cstring>
 #include <format>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include <string_view>
 #include <type_traits>
 #include <vector>
@@ -36,11 +37,11 @@ inline void trim(std::string &s)
     rtrim(s);
 }
 
-std::vector<const char *> split(std::string &s,
-                                const std::string_view delimiter)
+std::vector<char *> split(std::string &s, const std::string_view delimiter,
+                          bool allow_empty = false)
 {
     // Adapted from: https://stackoverflow.com/a/14266139
-    std::vector<const char *> tokens;
+    std::vector<char *> tokens;
     size_t last = 0;
     size_t next = 0;
     std::string_view token;
@@ -49,14 +50,14 @@ std::vector<const char *> split(std::string &s,
         token = s.substr(last, next - last);
         s[next] = '\0';
         auto ptr = s.data() + last;
-        if (*ptr)
+        if (*ptr && !allow_empty)
         {
             tokens.push_back(ptr);
         }
         last = next + 1;
     }
     auto ptr = s.data() + last;
-    if (*ptr)
+    if (*ptr && !allow_empty)
     {
         tokens.push_back(ptr);
     }
@@ -65,10 +66,12 @@ std::vector<const char *> split(std::string &s,
 }
 
 template <typename T>
-std::tuple<T, T, T> parse_three_of(std::string &str)
+std::tuple<T, T, T> parse_three_of(std::string &str,
+                                   std::string_view delimiter = " ",
+                                   bool allow_empty = false)
 {
     std::string backup = str;
-    auto tokens = split(str, " ");
+    auto tokens = split(str, delimiter);
     if (tokens.size() != 3)
     {
         throw std::runtime_error(std::format(
@@ -130,10 +133,120 @@ std::tuple<size_t, size_t, size_t> parse_three_ints(std::string &str)
     return parse_three_of<size_t>(str);
 }
 
+struct TriangleIndices
+{
+    std::array<int64_t, 3> vertices = {0};
+    std::array<int64_t, 3> uvs = {0};
+    std::array<int64_t, 3> normals = {0};
+};
+
+std::ostream &operator<<(std::ostream &ostr, const TriangleIndices &indices)
+{
+    ostr << "TriangleIndices:"
+         << "\n\tVertices: " << indices.vertices[0] << ", "
+         << indices.vertices[1] << ", " << indices.vertices[2]
+         << "\n\tUVs: " << indices.uvs[0] << ", " << indices.uvs[1] << ", "
+         << indices.uvs[2] << "\n\tNormals: " << indices.normals[0] << ", "
+         << indices.normals[1] << ", " << indices.normals[2];
+    return ostr;
+}
+
+// This does the same thing as strtok_r, but doesn't count consecutive
+// delimiters as one delimiter
+char *my_strtok(char *ptr, const char *delimiter, char **saveptr)
+{
+    if (saveptr == nullptr)
+    {
+        throw std::runtime_error("saveptr cannot be null");
+    }
+    // check if this is starting a new string or not
+    char *start;
+    if (ptr != nullptr)
+    {
+        start = ptr;
+    }
+    else
+    {
+        if (*saveptr == nullptr)
+        {
+            throw std::runtime_error("Invalid saveptr");
+        }
+        start = *saveptr;
+    }
+    // new string
+    char *next = strpbrk(start, delimiter);
+    if (next == nullptr)
+    {
+        if (*start == '\0')
+        {
+            return nullptr;
+        }
+        else
+        {
+            return start;
+        }
+    }
+    else
+    {
+        *next = '\0';
+        *saveptr = next + 1;
+        return start;
+    }
+}
+
+TriangleIndices ParseTriangleIndices(std::string &str)
+{
+    auto index_groups = split(str, " ");
+    if (index_groups.size() != 3)
+    {
+        throw std::runtime_error(std::format(
+            "OBJ parser can only load triangles, got {}", index_groups.size()));
+    }
+    TriangleIndices indices;
+
+    // per v/uv/n group
+    for (size_t i = 0; i < 3; ++i)
+    {
+        char *saveptr;
+        // parse vertex index
+        auto ptr = my_strtok(index_groups[i], "/", &saveptr);
+        if (ptr == nullptr)
+        {
+            throw std::runtime_error("No vertex in f directive");
+        }
+        char *strend;
+        indices.vertices[i] = std::strtoul(ptr, &strend, 0);
+        if (ptr == strend)
+        {
+            throw std::runtime_error(std::format("Invalid number: {}", str));
+        }
+        // Parse UV index
+        ptr = my_strtok(nullptr, "/", &saveptr);
+        if (ptr != nullptr)
+        {
+            // We have a uv
+            indices.uvs[i] = std::strtoul(ptr, &strend, 0);
+            // TODO what do we do with the return value?
+        }
+        // Parse normal
+        ptr = my_strtok(nullptr, "/", &saveptr);
+        if (ptr != nullptr)
+        {
+            // We have a normal
+            indices.normals[i] = std::strtoul(ptr, &strend, 0);
+            // TODO what do we do with the return value?
+        }
+    }
+
+    return indices;
+}
+
 std::shared_ptr<Mesh> load_obj_file(const std::filesystem::path &file_path)
 {
     // TODO: Support normals and UVs
     std::vector<Point3f> vertices;
+    std::vector<Vec3f> normals;
+    std::vector<TriangleIndices> index_list;
     std::vector<Triangle> tris;
 
     std::ifstream obj_file(file_path);
@@ -146,22 +259,40 @@ std::shared_ptr<Mesh> load_obj_file(const std::filesystem::path &file_path)
             // Comment, ignore
             continue;
         }
-        else if (line.starts_with('v'))
+        else if (line.starts_with("v "))
         {
             std::string to_parse = line.substr(2);
             auto [x, y, z] = parse_three_floats(to_parse);
             Point3f vert(x, y, z);
             vertices.push_back(vert);
         }
+        else if (line.starts_with("vn"))
+        {
+            std::string to_parse = line.substr(2);
+            auto [x, y, z] = parse_three_floats(to_parse);
+            Vec3f norm(x, y, z);
+            norm.Normalize();
+            normals.push_back(norm);
+        }
         else if (line.starts_with('f'))
         {
             std::string to_parse = line.substr(2);
-            auto [v0_index, v1_index, v2_index] = parse_three_ints(to_parse);
-            Point3f v0 = vertices[v0_index - 1];
-            Point3f v1 = vertices[v1_index - 1];
-            Point3f v2 = vertices[v2_index - 1];
-            Triangle tri(v0, v1, v2);
-            tris.push_back(tri);
+            TriangleIndices indices;
+            try
+            {
+                indices = ParseTriangleIndices(to_parse);
+            }
+            catch (const std::exception &e)
+            {
+                throw std::runtime_error(
+                    std::format("Error parsing line: {}: {}", line, e.what()));
+            }
+            if (indices.vertices[0] == 0 || indices.vertices[1] == 0 ||
+                indices.vertices[2] == 0)
+            {
+                throw std::runtime_error("Invalid triangle vertex indices!");
+            }
+            index_list.push_back(indices);
         }
         else
         {
@@ -169,7 +300,39 @@ std::shared_ptr<Mesh> load_obj_file(const std::filesystem::path &file_path)
         }
     }
 
-    std::cout << "Loaded mesh with " << tris.size() << " triangles\n";
+    for (auto index : index_list)
+    {
+        Point3f v0 = index.vertices[0] > 0
+                         ? vertices[index.vertices[0] - 1]
+                         : vertices[vertices.size() + index.vertices[0]];
+        Point3f v1 = index.vertices[1] > 0
+                         ? vertices[index.vertices[1] - 1]
+                         : vertices[vertices.size() + index.vertices[1]];
+        Point3f v2 = index.vertices[2] > 0
+                         ? vertices[index.vertices[2] - 1]
+                         : vertices[vertices.size() + index.vertices[2]];
+        Vec3f n0, n1, n2;
+        if (index.normals[0] != 0 && index.normals[1] != 0 &&
+            index.normals[2] != 0 && !normals.empty())
+        {
+            n0 = index.normals[0] > 0
+                     ? normals[index.normals[0] - 1]
+                     : normals[normals.size() + index.normals[0]];
+            n1 = index.normals[1] > 0
+                     ? normals[index.normals[1] - 1]
+                     : normals[normals.size() + index.normals[1]];
+            n2 = index.normals[2] > 0
+                     ? normals[index.normals[2] - 1]
+                     : normals[normals.size() + index.normals[2]];
+        }
+        Triangle tri(v0, v1, v2, n0, n1, n2);
+        tris.push_back(tri);
+    }
+
+    std::cout << "Loaded mesh: " << file_path << ".\n";
+    std::cout << "\tVertices: " << vertices.size() << '\n';
+    std::cout << "\tnormals: " << normals.size() << '\n';
+    std::cout << "\tTriangles: " << tris.size() << '\n';
     return make_shared<Mesh>(std::move(tris));
 }
 }  // namespace raytracer
