@@ -1,0 +1,43 @@
+
+{
+    "camera": {
+        "position": [0.0, 0.0, 0.0],
+        "forward": [0.3, 0.0, -1.0],
+        "up": [0.0, 1.0, 0.0]
+    },
+    "clear_color": [0.3, 0.5, 0.9],
+    "materials": [
+        {
+            "type": "blinnphong",
+            "name": "mat",
+            "base": [0.4, 0.4, 0.4],
+            "reflectivity": 0.1
+        }
+    ],
+    "shapes": [
+        {
+            "type": "mesh",
+            "name": "cyl_mesh",
+            "mesh": "../resources/models/quad_cylinder.obj"
+        }
+    ],
+    "objects": [
+        {
+            "shape": "cyl_mesh",
+            "position": [4.0, -3.0, -4.0],
+            "rotation": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0],
+            "material": "mat"
+        }
+    ],
+    "lights": [
+        {
+            "type": "point",
+            "position": [3.0, 3.0, 3.0],
+            "diffuse_power": 30.0,
+            "diffuse": [1.0, 1.0, 1.0],
+            "specular_power": 10.0,
+            "specular": [1.0, 1.0, 1.0]
+        }
+    ]
+}

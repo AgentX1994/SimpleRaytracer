@@ -194,18 +194,20 @@ char *my_strtok(char *ptr, const char *delimiter, char **saveptr)
     }
 }
 
-TriangleIndices ParseTriangleIndices(std::string &str)
+std::vector<TriangleIndices> ParseFace(std::string &str)
 {
     auto index_groups = split(str, " ");
-    if (index_groups.size() != 3)
+    std::vector<int64_t> vertices(index_groups.size(), 0);
+    std::vector<int64_t> uvs(index_groups.size(), 0);
+    std::vector<int64_t> normals(index_groups.size(), 0);
+    if (index_groups.size() < 3)
     {
         throw std::runtime_error(std::format(
-            "OBJ parser can only load triangles, got {}", index_groups.size()));
+            "Invalid number of vertices in face: {}", index_groups.size()));
     }
-    TriangleIndices indices;
 
     // per v/uv/n group
-    for (size_t i = 0; i < 3; ++i)
+    for (size_t i = 0; i < index_groups.size(); ++i)
     {
         char *saveptr;
         // parse vertex index
@@ -215,7 +217,7 @@ TriangleIndices ParseTriangleIndices(std::string &str)
             throw std::runtime_error("No vertex in f directive");
         }
         char *strend;
-        indices.vertices[i] = std::strtoul(ptr, &strend, 0);
+        vertices[i] = std::strtoul(ptr, &strend, 0);
         if (ptr == strend)
         {
             throw std::runtime_error(std::format("Invalid number: {}", str));
@@ -225,7 +227,7 @@ TriangleIndices ParseTriangleIndices(std::string &str)
         if (ptr != nullptr)
         {
             // We have a uv
-            indices.uvs[i] = std::strtoul(ptr, &strend, 0);
+            uvs[i] = std::strtoul(ptr, &strend, 0);
             // TODO what do we do with the return value?
         }
         // Parse normal
@@ -233,12 +235,29 @@ TriangleIndices ParseTriangleIndices(std::string &str)
         if (ptr != nullptr)
         {
             // We have a normal
-            indices.normals[i] = std::strtoul(ptr, &strend, 0);
+            normals[i] = std::strtoul(ptr, &strend, 0);
             // TODO what do we do with the return value?
         }
     }
+    // TODO: ensure polygon is convex
 
-    return indices;
+    size_t number_of_tris = index_groups.size() - 2;
+    std::vector<TriangleIndices> tris(number_of_tris);
+    // Per triangle in face
+    for (size_t i = 0; i < number_of_tris; ++i)
+    {
+        tris[i].vertices[0] = vertices[0];
+        tris[i].vertices[1] = vertices[i + 1];
+        tris[i].vertices[2] = vertices[i + 2];
+        tris[i].uvs[0] = uvs[0];
+        tris[i].uvs[1] = uvs[i + 1];
+        tris[i].uvs[2] = uvs[i + 2];
+        tris[i].normals[0] = normals[0];
+        tris[i].normals[1] = normals[i + 1];
+        tris[i].normals[2] = normals[i + 2];
+    }
+
+    return tris;
 }
 
 std::shared_ptr<Mesh> load_obj_file(const std::filesystem::path &file_path)
@@ -277,22 +296,26 @@ std::shared_ptr<Mesh> load_obj_file(const std::filesystem::path &file_path)
         else if (line.starts_with('f'))
         {
             std::string to_parse = line.substr(2);
-            TriangleIndices indices;
+            std::vector<TriangleIndices> tris;
             try
             {
-                indices = ParseTriangleIndices(to_parse);
+                tris = ParseFace(to_parse);
             }
             catch (const std::exception &e)
             {
                 throw std::runtime_error(
                     std::format("Error parsing line: {}: {}", line, e.what()));
             }
-            if (indices.vertices[0] == 0 || indices.vertices[1] == 0 ||
-                indices.vertices[2] == 0)
+            for (auto indices : tris)
             {
-                throw std::runtime_error("Invalid triangle vertex indices!");
+                if (indices.vertices[0] == 0 || indices.vertices[1] == 0 ||
+                    indices.vertices[2] == 0)
+                {
+                    throw std::runtime_error(
+                        "Invalid triangle vertex indices!");
+                }
+                index_list.push_back(indices);
             }
-            index_list.push_back(indices);
         }
         else
         {
